@@ -1,0 +1,412 @@
+.sys-config-main {
+  max-width: none;
+}
+
+.sys-config-page-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 0 0 0.85rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: var(--admin-radius);
+  border: 1px solid var(--admin-border);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--admin-muted) 7%, var(--admin-card)) 0%,
+    var(--admin-card) 100%
+  );
+  box-shadow: 0 8px 20px rgb(20 31 20 / 6%);
+}
+
+.sys-config-page-head__title {
+  margin: 0;
+  font-size: clamp(1.15rem, 2.6vw, 1.55rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--admin-text);
+}
+
+.sys-config-panel {
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--admin-border) 92%, #fff);
+  border-radius: 12px;
+  background: linear-gradient(180deg, #fff 0%, #fcfdfb 100%);
+  box-shadow: 0 10px 30px rgb(24 37 24 / 7%);
+}
+
+.sys-config-panel .admin-panel__body {
+  padding: 1rem;
+}
+
+.sys-config-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  margin: 0 0 1rem;
+  padding-left: 0.35rem;
+  border-bottom: 1px solid #d8ded8;
+}
+
+.sys-config-tabs__btn {
+  margin-bottom: -1px;
+  padding: 0.52rem 0.95rem;
+  border: 1px solid transparent;
+  border-radius: 4px 4px 0 0;
+  background: transparent;
+  color: #000;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 500;
+  line-height: 1.35;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.sys-config-tabs__btn:hover {
+  background: #f3f5f3;
+  border-color: #e4e8e4 #e4e8e4 #d8ded8;
+  color: #000;
+}
+
+.sys-config-tabs__btn--active {
+  background: #84b179;
+  border-color: #84b179 #84b179 #fcfdfb;
+  color: #fff;
+  box-shadow: 0 -1px 0 rgb(255 255 255 / 30%) inset;
+}
+
+.sys-config-tabs__btn:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--admin-primary-light) 40%, #4a90e2);
+  outline-offset: 2px;
+}
+
+.sys-config-content__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--admin-text);
+}
+
+.sys-config-content__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 0 0 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e4eae4;
+}
+
+.sys-config-content__add-btn {
+  flex: 0 0 auto;
+  padding: 0.42rem 0.82rem;
+  border: 1px solid #84b179;
+  border-radius: 8px;
+  background: #84b179;
+  color: #fff;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.12s ease,
+    box-shadow 0.15s ease;
+}
+
+.sys-config-content__add-btn:hover {
+  background: color-mix(in srgb, #84b179 88%, #000);
+  border-color: color-mix(in srgb, #84b179 80%, #000);
+  box-shadow: 0 6px 14px rgb(59 99 52 / 22%);
+}
+
+.sys-config-content__add-btn:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--admin-primary-light) 45%, #4a90e2);
+  outline-offset: 2px;
+}
+
+.sys-config-content__add-btn:active {
+  transform: translateY(1px);
+}
+
+.sys-config-table-wrap {
+  max-height: none;
+  border: 1px solid #d8dfd8;
+  border-radius: 10px;
+  background: #fff;
+  overflow: auto;
+}
+
+.sys-config-table {
+  width: 100%;
+  font-size: 0.8125rem;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.sys-config-table thead {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--admin-primary-light) 32%, #fff) 0%,
+    color-mix(in srgb, var(--admin-primary-light) 14%, #f4f6f4) 100%
+  );
+}
+
+.sys-config-table th {
+  background: transparent;
+  color: color-mix(in srgb, var(--admin-primary) 42%, var(--admin-text));
+  border-bottom: 2px solid var(--admin-primary);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.sys-config-table th,
+.sys-config-table td {
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  vertical-align: top;
+  line-height: 1.45;
+  padding: 0.56rem 0.68rem;
+  border-bottom: 1px solid #e8ede8;
+}
+
+.sys-config-table tbody tr:nth-child(even) {
+  background: color-mix(in srgb, var(--admin-muted) 5%, var(--admin-card));
+}
+
+.sys-config-table tbody tr:hover td {
+  background: color-mix(in srgb, var(--admin-primary-light) 14%, transparent);
+}
+
+.sys-config-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.sys-config-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.sys-config-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 1px solid #d3dbd3;
+  border-radius: 6px;
+  background: #fff;
+  color: #3a5338;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.sys-config-action-btn:hover {
+  border-color: #84b179;
+  background: #f4faf2;
+  color: #274024;
+}
+
+.sys-config-action-btn svg {
+  width: 0.95rem;
+  height: 0.95rem;
+  fill: currentColor;
+}
+
+.sys-config-action-btn--danger {
+  color: #9a2f2f;
+}
+
+.sys-config-action-btn--danger:hover {
+  border-color: #c84a4a;
+  background: #fff2f2;
+  color: #7f1818;
+}
+
+body.sys-config-modal-open {
+  overflow: hidden;
+}
+
+.sys-config-modal[hidden] {
+  display: none;
+}
+
+.sys-config-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+}
+
+.sys-config-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgb(0 0 0 / 38%);
+}
+
+.sys-config-modal__dialog {
+  position: relative;
+  width: min(560px, calc(100vw - 2rem));
+  margin: 3rem auto;
+  border-radius: 12px;
+  border: 1px solid #d7e0d6;
+  background: #fff;
+  box-shadow: 0 20px 45px rgb(11 23 10 / 22%);
+  overflow: hidden;
+}
+
+.sys-config-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.8rem 1rem;
+  border-bottom: 1px solid #e5ece5;
+  background: #f8fbf8;
+}
+
+.sys-config-modal__title {
+  margin: 0;
+  font-size: 1rem;
+  color: #1f2f1e;
+}
+
+.sys-config-modal__close {
+  border: none;
+  background: transparent;
+  color: #4a4a4a;
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.sys-config-modal__body {
+  padding: 1rem;
+  display: grid;
+  gap: 0.8rem;
+}
+
+.sys-config-modal__section-title {
+  margin: 0.2rem 0 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #3e5a3d;
+}
+
+.sys-config-modal__row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.sys-config-modal__field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.sys-config-modal__field label {
+  font-size: 0.83rem;
+  font-weight: 600;
+  color: #243624;
+}
+
+.sys-config-modal__field input,
+.sys-config-modal__field select,
+.sys-config-modal__field textarea {
+  width: 100%;
+  border: 1px solid #cfd9cf;
+  border-radius: 8px;
+  padding: 0.5rem 0.6rem;
+  font: inherit;
+  font-size: 0.83rem;
+  color: #1f1f1f;
+  background: #fff;
+}
+
+.sys-config-modal__field textarea {
+  resize: vertical;
+  min-height: 5rem;
+}
+
+.sys-config-modal__field input:focus-visible,
+.sys-config-modal__field select:focus-visible,
+.sys-config-modal__field textarea:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--admin-primary-light) 45%, #4a90e2);
+  outline-offset: 1px;
+}
+
+.sys-config-modal__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 0.9rem 1rem 1rem;
+  border-top: 1px solid #e5ece5;
+}
+
+.sys-config-modal__btn {
+  border: 1px solid #cfd9cf;
+  border-radius: 8px;
+  padding: 0.43rem 0.82rem;
+  background: #fff;
+  color: #223222;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.sys-config-modal__btn--primary {
+  border-color: #84b179;
+  background: #84b179;
+  color: #fff;
+}
+
+.sys-config-modal__btn--primary:hover {
+  background: color-mix(in srgb, #84b179 88%, #000);
+  border-color: color-mix(in srgb, #84b179 80%, #000);
+}
+
+@media (max-width: 760px) {
+  .sys-config-tabs {
+    flex-direction: column;
+    border-bottom: none;
+    padding-left: 0;
+    margin-bottom: 0.85rem;
+  }
+
+  .sys-config-tabs__btn {
+    width: 100%;
+    text-align: left;
+    margin-bottom: 0.35rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+  }
+
+  .sys-config-tabs__btn--active {
+    border-color: #ddd;
+  }
+
+  .sys-config-content__head {
+    flex-wrap: wrap;
+  }
+
+  .sys-config-modal__dialog {
+    margin: 1rem auto;
+  }
+
+  .sys-config-modal__row {
+    grid-template-columns: 1fr;
+  }
+}

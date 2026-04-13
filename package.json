@@ -1,0 +1,17 @@
+{
+  "name": "cpsu-doc-track",
+  "version": "1.0.0",
+  "private": true,
+  "description": "CPSU Document Track",
+  "workspaces": [
+    "Frontend"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "dev": "npm run dev --workspace Frontend",
+    "build": "npm run build --workspace Frontend",
+    "preview": "npm run preview --workspace Frontend"
+  }
+}
