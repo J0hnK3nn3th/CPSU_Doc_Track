@@ -2,9 +2,9 @@ import '../css/admin.css';
 
 import '../css/incoming.css';
 
-import { createHeader } from '../header, footer, sidebar/header.js';
+import { createHeader } from '../header, footer, sidebar/uheader.js';
 
-import { createSidebar } from '../header, footer, sidebar/sidebar.js';
+import { createSidebar } from '../header, footer, sidebar/usidebar.js';
 
 
 
@@ -323,6 +323,10 @@ async function mountIncoming(root = document.querySelector('#app')) {
     activeId: 'incoming',
 
     onSelect: () => closeSidebar(),
+
+    isAdmin: false,
+
+    dashboardHref: 'user.html',
 
   });
 

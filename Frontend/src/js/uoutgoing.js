@@ -1,7 +1,7 @@
 import '../css/admin.css';
 import '../css/outgoing.css';
-import { createHeader } from '../header, footer, sidebar/header.js';
-import { createSidebar } from '../header, footer, sidebar/sidebar.js';
+import { createHeader } from '../header, footer, sidebar/uheader.js';
+import { createSidebar } from '../header, footer, sidebar/usidebar.js';
 
 const PRIMARY = '#84B179';
 const PRIMARY_LIGHT = '#A2CB8B';
@@ -11,7 +11,7 @@ const SAMPLE_OUTGOING = [];
 const ICON_SEARCH =
   '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>';
 
-function buildOutgoingMain() {
+function buildOutgoingMain(currentUser = null) {
   const main = document.createElement('main');
   main.className = 'admin-main outgoing-main';
 
@@ -231,6 +231,7 @@ function buildOutgoingMain() {
   });
   const modal = main.querySelector('#outgoing-new-doc-modal');
   const modalDateCreated = main.querySelector('#outgoing-modal-date-created');
+  const modalPreparedBy = main.querySelector('#outgoing-modal-prepared-by');
   const modalFirstInput = main.querySelector('#outgoing-modal-doc-no');
   const modalDocCodeInput = main.querySelector('#outgoing-modal-doc-no');
   const modalDocCategoryInput = main.querySelector('#outgoing-modal-category');
@@ -239,6 +240,15 @@ function buildOutgoingMain() {
   const suggestionCache = new Map();
   let fetchSuggestionsTimer = null;
   let suggestionsAbortController = null;
+  const getPreparedByName = () => {
+    const firstName = String(currentUser?.first_name || '').trim();
+    const middleName = String(currentUser?.middle_name || '').trim();
+    const lastName = String(currentUser?.last_name || '').trim();
+    const middleInitial = middleName ? `${middleName.charAt(0).toUpperCase()}.` : '';
+    const fullName = [firstName, middleInitial, lastName].filter(Boolean).join(' ').trim();
+    return fullName || String(currentUser?.username || '').trim();
+  };
+
   const getCurrentDate = () =>
     new Date().toLocaleDateString('en-US', {
       year: 'numeric',
@@ -346,6 +356,9 @@ function buildOutgoingMain() {
     if (modalDateCreated instanceof HTMLInputElement) {
       modalDateCreated.value = getCurrentDate();
     }
+    if (modalPreparedBy instanceof HTMLInputElement) {
+      modalPreparedBy.value = getPreparedByName();
+    }
     modal.hidden = false;
     document.body.classList.add('outgoing-modal-open');
     modalFirstInput?.focus();
@@ -377,19 +390,19 @@ function buildOutgoingMain() {
 async function requireAuth() {
   try {
     const res = await fetch('/api/auth/me/', { credentials: 'include' });
-    if (res.ok) return true;
+    if (res.ok) return res.json();
   } catch {
     /* network error — fall through */
   }
   window.location.replace('/');
-  return false;
+  return null;
 }
 
 async function mountOutgoing(root = document.querySelector('#app')) {
   if (!root) return;
 
-  const ok = await requireAuth();
-  if (!ok) return;
+  const currentUser = await requireAuth();
+  if (!currentUser) return;
 
   document.documentElement.style.setProperty('--admin-primary', PRIMARY);
   document.documentElement.style.setProperty('--admin-primary-light', PRIMARY_LIGHT);
@@ -410,13 +423,15 @@ async function mountOutgoing(root = document.querySelector('#app')) {
   const sidebar = createSidebar({
     activeId: 'outgoing',
     onSelect: () => closeSidebar(),
+    isAdmin: false,
+    dashboardHref: 'user.html',
   });
 
   const shell = document.createElement('div');
   shell.className = 'admin-shell';
 
   const header = createHeader({ onMenuToggle: toggleSidebar });
-  const main = buildOutgoingMain();
+  const main = buildOutgoingMain(currentUser);
 
   shell.append(header, main);
   layout.append(sidebar, backdrop, shell);

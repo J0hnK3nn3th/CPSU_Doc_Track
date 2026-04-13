@@ -1,7 +1,7 @@
 import json
 
 from django.conf import settings
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.db.models import Q
 from django.http import JsonResponse
@@ -57,21 +57,54 @@ def auth_login(request):
     if not identifier or not password:
         return JsonResponse({'error': 'Please enter your username and password.'}, status=400)
 
+    # Try Django auth user first (supports username/email login).
     user = User.objects.filter(
         Q(username__iexact=identifier) | Q(email__iexact=identifier),
     ).first()
+    if user is not None:
+        user = authenticate(request, username=user.username, password=password)
 
+    # Fallback: allow login from UserRoleConfig credentials.
     if user is None:
-        return JsonResponse({'error': 'Invalid username or password.'}, status=401)
+        role_user = UserRoleConfig.objects.filter(
+            username__iexact=identifier,
+            is_active=True,
+        ).first()
+        if role_user is None or role_user.password != password:
+            return JsonResponse({'error': 'Invalid username or password.'}, status=401)
 
-    user = authenticate(request, username=user.username, password=password)
-    if user is None:
-        return JsonResponse({'error': 'Invalid username or password.'}, status=401)
+        # Ensure a matching Django auth user exists so session auth works.
+        user = User.objects.filter(username__iexact=role_user.username).first()
+        if user is None:
+            user = User(
+                username=role_user.username,
+                first_name=role_user.first_name or '',
+                last_name=role_user.last_name or '',
+            )
+        else:
+            user.first_name = role_user.first_name or ''
+            user.last_name = role_user.last_name or ''
+
+        # Keep Django password in sync with role config password.
+        user.set_password(password)
+        user.save()
+
+        user = authenticate(request, username=user.username, password=password)
+        if user is None:
+            return JsonResponse({'error': 'Invalid username or password.'}, status=401)
 
     login(request, user)
+
+    # Send role-based landing page:
+    # users listed in accounts_userroleconfig go to user page.
+    user_has_role_config = UserRoleConfig.objects.filter(
+        username__iexact=user.username
+    ).exists()
+
+    redirect_target = '/user.html' if user_has_role_config else '/admin.html'
     return JsonResponse({
         'ok': True,
-        'redirect': '/admin.html',
+        'redirect': redirect_target,
         'user': {
             'username': user.username,
             'email': user.email or '',
@@ -82,12 +115,32 @@ def auth_login(request):
 @require_http_methods(['GET', 'HEAD'])
 def auth_me(request):
     if request.user.is_authenticated:
+        role_user = UserRoleConfig.objects.filter(
+            username__iexact=request.user.username,
+            is_active=True,
+        ).first()
+        first_name = (
+            (role_user.first_name if role_user else request.user.first_name) or ''
+        )
+        last_name = (
+            (role_user.last_name if role_user else request.user.last_name) or ''
+        )
+        middle_name = (role_user.middle_name if role_user else '') or ''
         return JsonResponse({
             'authenticated': True,
             'username': request.user.username,
             'email': request.user.email or '',
+            'first_name': first_name,
+            'middle_name': middle_name,
+            'last_name': last_name,
         })
     return JsonResponse({'authenticated': False}, status=401)
+
+
+@require_http_methods(['POST'])
+def auth_logout(request):
+    logout(request)
+    return JsonResponse({'ok': True, 'redirect': '/login.html'})
 
 
 def _require_authenticated(request):

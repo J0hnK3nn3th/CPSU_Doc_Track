@@ -9,7 +9,7 @@ const PRIMARY_LIGHT = '#A2CB8B';
 const SYSTEM_CONFIG_DATA = {
   categories: {
     label: 'Document Type',
-    columns: ['Category Code', 'Category Name', 'Description', 'Status'],
+    columns: ['Document Code', 'Document Type', 'Description', 'Status'],
     endpoint: 'categories',
     mapRow: (row) => [row.code || '-', row.name || '-', row.description || '-', row.status || '-'],
   },

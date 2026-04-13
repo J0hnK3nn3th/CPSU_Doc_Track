@@ -1,4 +1,4 @@
-import './header.css';
+import './uheader.css';
 import logoUrl from '../images/cpsu logo.png';
 
 function getCookie(name) {
@@ -32,6 +32,17 @@ async function logoutUser() {
   const redirectTarget =
     typeof payload.redirect === 'string' && payload.redirect ? payload.redirect : '/login.html';
   window.location.assign(redirectTarget);
+}
+
+async function loadCurrentUserProfile() {
+  try {
+    const response = await fetch('/api/auth/me/', { credentials: 'include' });
+    if (!response.ok) return null;
+    const payload = await response.json();
+    return payload && payload.authenticated ? payload : null;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -77,10 +88,9 @@ export function createHeader({ onMenuToggle } = {}) {
           aria-label="User menu"
         >
           <span class="admin-header__user-avatar" aria-hidden="true">A</span>
-          <span class="admin-header__user-name">System Administrator</span>
+          <span class="admin-header__user-name">Admin</span>
         </button>
         <div class="admin-header__dropdown-menu" hidden>
-          <button type="button" class="admin-header__dropdown-item">Settings</button>
           <button type="button" class="admin-header__dropdown-item" data-action="logout">Log Out</button>
         </div>
       </div>
@@ -94,6 +104,22 @@ export function createHeader({ onMenuToggle } = {}) {
   const userBtn = header.querySelector('.admin-header__user');
   const dropdownMenu = header.querySelector('.admin-header__dropdown-menu');
   const logoutBtn = header.querySelector('[data-action="logout"]');
+  const userNameEl = header.querySelector('.admin-header__user-name');
+  const userAvatarEl = header.querySelector('.admin-header__user-avatar');
+
+  loadCurrentUserProfile().then((profile) => {
+    if (!profile) return;
+
+    const firstName = String(profile.first_name || '').trim();
+    const lastName = String(profile.last_name || '').trim();
+    const username = String(profile.username || '').trim();
+    const fullName = `${firstName} ${lastName}`.trim() || username || 'User';
+    const initialsSource = `${firstName}${lastName}`.trim() || fullName;
+    const avatarInitial = initialsSource.charAt(0).toUpperCase() || 'U';
+
+    if (userNameEl) userNameEl.textContent = fullName;
+    if (userAvatarEl) userAvatarEl.textContent = avatarInitial;
+  });
 
   if (userDropdown && userBtn && dropdownMenu) {
     const closeDropdown = () => {
