@@ -1,6 +1,7 @@
 import { createHeader } from '../header, footer, sidebar/header.js';
 import { createSidebar } from '../header, footer, sidebar/sidebar.js';
 import { apiUrl } from './api.js';
+import { confirmAction, notify, showInfo } from './notifications.js';
 
 const PRIMARY = '#84B179';
 const PRIMARY_LIGHT = '#A2CB8B';
@@ -39,15 +40,27 @@ function iconSvg(kind) {
   if (kind === 'edit') {
     return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 17.25 9.81-9.82 2.76 2.76L5.76 20H3v-2.75ZM20.71 7.04a1 1 0 0 0 0-1.41L18.37 3.3a1 1 0 0 0-1.41 0l-1.68 1.68 2.76 2.76 1.67-1.7Z"/></svg>';
   }
+  if (kind === 'enable') {
+    return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.2 16.2-3.9-3.9 1.4-1.4 2.5 2.5 8.1-8.1 1.4 1.4Z"/></svg>';
+  }
   return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm4.6 13.2-1.4 1.4L7.4 8.8l1.4-1.4Z"/></svg>';
 }
 
-function actionButtons(id) {
+function isDisabledRow(row) {
+  return String(row?.status || '').toLowerCase() === 'disabled';
+}
+
+function actionButtons(row) {
+  const disabled = isDisabledRow(row);
+  const toggleAction = disabled ? 'enable' : 'disable';
+  const toggleTitle = disabled ? 'Enable' : 'Disable';
+  const toggleModifier = disabled ? 'sys-config-action-btn--enable' : 'sys-config-action-btn--danger';
+
   return `
     <div class="sys-config-actions">
-      <button type="button" class="sys-config-action-btn" data-action="view" data-id="${id}" title="View">${iconSvg('view')}</button>
-      <button type="button" class="sys-config-action-btn" data-action="edit" data-id="${id}" title="Edit">${iconSvg('edit')}</button>
-      <button type="button" class="sys-config-action-btn sys-config-action-btn--danger" data-action="disable" data-id="${id}" title="Disable">${iconSvg('disable')}</button>
+      <button type="button" class="sys-config-action-btn" data-action="view" data-id="${row.id}" title="View">${iconSvg('view')}</button>
+      <button type="button" class="sys-config-action-btn" data-action="edit" data-id="${row.id}" title="Edit">${iconSvg('edit')}</button>
+      <button type="button" class="sys-config-action-btn ${toggleModifier}" data-action="${toggleAction}" data-id="${row.id}" title="${toggleTitle}">${iconSvg(toggleAction)}</button>
     </div>
   `;
 }
@@ -86,7 +99,7 @@ function renderTable(main, tabId) {
   addNewButton.setAttribute('data-tab', tabId);
   theadRow.innerHTML = [...dataset.columns, 'Actions'].map((column) => `<th scope="col">${column}</th>`).join('');
   tbody.innerHTML = state.rowsByTab[tabId]
-    .map((row) => `<tr>${dataset.mapRow(row).map((value) => `<td>${value}</td>`).join('')}<td>${actionButtons(row.id)}</td></tr>`)
+    .map((row) => `<tr>${dataset.mapRow(row).map((value) => `<td>${value}</td>`).join('')}<td>${actionButtons(row)}</td></tr>`)
     .join('');
 }
 
@@ -462,8 +475,17 @@ function buildSystemConfigMain() {
         await loadTabData(tabId);
         renderTable(main, tabId);
         closeAllModals();
+        await notify({
+          icon: 'success',
+          title: 'Saved',
+          text: `${SYSTEM_CONFIG_DATA[tabId]?.label || 'Record'} updated successfully.`,
+        });
       } catch (error) {
-        window.alert(error.message || 'Failed to save data.');
+        await notify({
+          icon: 'error',
+          title: 'Save failed',
+          text: error.message || 'Failed to save data.',
+        });
       }
     });
   });
@@ -481,22 +503,43 @@ function buildSystemConfigMain() {
     if (!row) return;
 
     if (action === 'view') {
-      window.alert(JSON.stringify(row, null, 2));
+      const details = Object.entries(row)
+        .map(([key, value]) => `<div><strong>${key}</strong>: ${value ?? '-'}</div>`)
+        .join('');
+      await showInfo({
+        title: `${SYSTEM_CONFIG_DATA[state.activeTab]?.label || 'Record'} details`,
+        html: details,
+      });
       return;
     }
     if (action === 'edit') {
       openModalForTab(state.activeTab, row);
       return;
     }
-    if (action === 'disable') {
-      const confirmDisable = window.confirm('Disable this record?');
-      if (!confirmDisable) return;
+    if (action === 'disable' || action === 'enable') {
+      const enabling = action === 'enable';
+      const confirmed = await confirmAction({
+        title: `${enabling ? 'Enable' : 'Disable'} this record?`,
+        text: enabling
+          ? 'This record will become active again.'
+          : 'You can re-enable it later from the system configuration data.',
+      });
+      if (!confirmed) return;
       try {
-        await requestJson(`/api/system-config/${state.activeTab}/${itemId}/disable/`, { method: 'PATCH' });
+        await requestJson(`/api/system-config/${state.activeTab}/${itemId}/${action}/`, { method: 'PATCH' });
         await loadTabData(state.activeTab);
         renderTable(main, state.activeTab);
+        await notify({
+          icon: 'success',
+          title: `Record ${enabling ? 'enabled' : 'disabled'}`,
+          text: `The selected record has been ${enabling ? 'enabled' : 'disabled'}.`,
+        });
       } catch (error) {
-        window.alert(error.message || 'Failed to disable record.');
+        await notify({
+          icon: 'error',
+          title: `${enabling ? 'Enable' : 'Disable'} failed`,
+          text: error.message || `Failed to ${enabling ? 'enable' : 'disable'} record.`,
+        });
       }
     }
   });

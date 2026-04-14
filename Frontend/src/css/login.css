@@ -169,3 +169,30 @@ body {
   transform: none;
   box-shadow: none;
 }
+
+.login-swal-popup {
+  border-radius: 14px;
+}
+
+.login-swal-title {
+  font-size: 1.15rem;
+}
+
+.login-swal-text {
+  color: var(--login-muted);
+}
+
+.login-swal-confirm {
+  border: none;
+  border-radius: 8px;
+  background: var(--login-accent);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  padding: 0.58rem 1.25rem;
+  cursor: pointer;
+}
+
+.login-swal-confirm:hover {
+  background: var(--login-accent-hover);
+}

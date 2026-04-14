@@ -1,4 +1,5 @@
 import { apiUrl } from './api.js';
+import { notify } from './notifications.js';
 
 const logoUrl = '/src/images/cpsu%20logo.png';
 
@@ -60,23 +61,23 @@ function mountLogin(root = document.querySelector('#app')) {
   document.documentElement.style.setProperty('--login-accent', ACCENT);
 
   const form = root.querySelector('#login-form');
-  const errorEl = root.querySelector('#login-error');
   const submitBtn = form.querySelector('button[type="submit"]');
 
   ensureCsrf().catch(() => {});
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    errorEl.hidden = true;
-    errorEl.textContent = '';
 
     const data = new FormData(form);
     const username = String(data.get('username') || '').trim();
     const password = String(data.get('password') || '');
 
     if (!username || !password) {
-      errorEl.textContent = 'Please enter your username and password.';
-      errorEl.hidden = false;
+      await notify({
+        icon: 'warning',
+        title: 'Missing credentials',
+        text: 'Please enter your username and password.',
+      });
       return;
     }
 
@@ -105,16 +106,21 @@ function mountLogin(root = document.querySelector('#app')) {
       }
 
       if (!res.ok) {
+        let message = '';
         if (res.status === 403 && !payload.error) {
-          errorEl.textContent =
+          message =
             'Access denied (403). If this persists, confirm you are using the Vite dev URL (port 5173) with Django on port 8000.';
         } else {
-          errorEl.textContent =
+          message =
             typeof payload.error === 'string'
               ? payload.error
               : `Sign in failed (${res.status}). Please try again.`;
         }
-        errorEl.hidden = false;
+        await notify({
+          icon: 'error',
+          title: 'Login failed',
+          text: message,
+        });
         return;
       }
 
@@ -122,10 +128,19 @@ function mountLogin(root = document.querySelector('#app')) {
         typeof payload.redirect === 'string' && payload.redirect
           ? payload.redirect
           : '/admin.html';
+      await notify({
+        icon: 'success',
+        title: 'Login successful',
+        text: 'Redirecting to your dashboard...',
+        timer: 1200,
+      });
       window.location.assign(target);
     } catch {
-      errorEl.textContent = 'Could not reach the server. Is Django running on port 8000?';
-      errorEl.hidden = false;
+      await notify({
+        icon: 'error',
+        title: 'Connection error',
+        text: 'Could not reach the server. Is Django running on port 8000?',
+      });
     } finally {
       submitBtn.disabled = false;
       submitBtn.removeAttribute('aria-busy');

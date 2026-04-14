@@ -234,6 +234,16 @@
   color: #7f1818;
 }
 
+.sys-config-action-btn--enable {
+  color: #1f6d3b;
+}
+
+.sys-config-action-btn--enable:hover {
+  border-color: #2e9e56;
+  background: #f2fff6;
+  color: #15562d;
+}
+
 body.sys-config-modal-open {
   overflow: hidden;
 }

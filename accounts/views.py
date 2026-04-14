@@ -314,3 +314,20 @@ def system_config_disable(request, tab_name, item_id):
     obj.is_active = False
     obj.save(update_fields=['is_active', 'updated_at'])
     return JsonResponse({'row': _serialize_item(tab_name, obj)})
+
+
+@csrf_exempt
+@require_http_methods(['PATCH'])
+def system_config_enable(request, tab_name, item_id):
+    auth_error = _require_authenticated(request)
+    if auth_error:
+        return auth_error
+
+    model = _tab_model(tab_name)
+    if model is None:
+        return JsonResponse({'error': 'Invalid tab.'}, status=404)
+
+    obj = get_object_or_404(model, pk=item_id)
+    obj.is_active = True
+    obj.save(update_fields=['is_active', 'updated_at'])
+    return JsonResponse({'row': _serialize_item(tab_name, obj)})

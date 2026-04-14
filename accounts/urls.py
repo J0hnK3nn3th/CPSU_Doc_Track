@@ -10,4 +10,5 @@ urlpatterns = [
     path('system-config/<str:tab_name>/', views.system_config_collection, name='system_config_collection'),
     path('system-config/<str:tab_name>/<int:item_id>/', views.system_config_item, name='system_config_item'),
     path('system-config/<str:tab_name>/<int:item_id>/disable/', views.system_config_disable, name='system_config_disable'),
+    path('system-config/<str:tab_name>/<int:item_id>/enable/', views.system_config_enable, name='system_config_enable'),
 ]
