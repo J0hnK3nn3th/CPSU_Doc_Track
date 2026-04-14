@@ -14,12 +14,17 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+import os
+
 from django.contrib import admin
 from django.http import JsonResponse
 from django.urls import include, path
+from django.views.generic import RedirectView
+
+FRONTEND_URL = os.getenv('FRONTEND_URL', 'https://cpsu-doc-track-frontend-soke.vercel.app')
 
 urlpatterns = [
-    path('', lambda request: JsonResponse({'status': 'ok', 'service': 'CPSU Doc Track API'})),
+    path('', RedirectView.as_view(url=FRONTEND_URL, permanent=False)),
     path('health/', lambda request: JsonResponse({'status': 'healthy'})),
     path('admin/', admin.site.urls),
     path('api/', include('accounts.urls')),
