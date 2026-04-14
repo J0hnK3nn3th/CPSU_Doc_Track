@@ -58,6 +58,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 
 ROOT_URLCONF = 'CPSU_Doc_Track.urls'
@@ -93,9 +94,18 @@ WSGI_APPLICATION = 'CPSU_Doc_Track.wsgi.application'
 #         'PORT':'3306'
 #     }
 # }
+# DATABASES = {
+#     'default': dj_database_url.config(
+#         default='postgresql://doc_track_db_6r4w_user:MVeRKTa9cVm5TiU3hyCsIZ1eXQeNT2C3@dpg-d7eq7gl7vvec7383t7q0-a.oregon-postgres.render.com/doc_track_db_6r4w',
+#         conn_max_age=600,
+#         ssl_require=True
+#     )
+# }
+
+
 DATABASES = {
-    'default': dj_database_url.config(
-        default='postgresql://doc_track_db_6r4w_user:MVeRKTa9cVm5TiU3hyCsIZ1eXQeNT2C3@dpg-d7eq7gl7vvec7383t7q0-a.oregon-postgres.render.com/doc_track_db_6r4w',
+    "default": dj_database_url.config(
+        default=os.environ.get("DATABASE_URL"),
         conn_max_age=600,
         ssl_require=True
     )
@@ -133,8 +143,8 @@ DEFAULT_FRONTEND_ORIGINS = [
     "http://localhost:5173",
 ]
 
-CORS_ALLOWED_ORIGINS = _split_csv_env('CORS_ALLOWED_ORIGINS', DEFAULT_FRONTEND_ORIGINS)
-CSRF_TRUSTED_ORIGINS = _split_csv_env('CSRF_TRUSTED_ORIGINS', DEFAULT_FRONTEND_ORIGINS)
+CORS_ALLOWED_ORIGINS = "https://cpsu-doc-track-frontend-soke.vercel.app",
+CSRF_TRUSTED_ORIGINS = "https://cpsu-doc-track-frontend-soke.vercel.app",
 CORS_ALLOW_CREDENTIALS = True
 
 # Internationalization
@@ -152,4 +162,5 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = "/static/"
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
