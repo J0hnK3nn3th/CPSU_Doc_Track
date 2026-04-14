@@ -1,5 +1,6 @@
 import './uheader.css';
 import logoUrl from '../images/cpsu logo.png';
+import { apiUrl } from '../js/api.js';
 
 function getCookie(name) {
   const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -8,9 +9,9 @@ function getCookie(name) {
 }
 
 async function logoutUser() {
-  await fetch('/api/auth/csrf/', { credentials: 'include' });
+  await fetch(apiUrl('/api/auth/csrf/'), { credentials: 'include' });
   const csrfToken = getCookie('csrftoken');
-  const response = await fetch('/api/auth/logout/', {
+  const response = await fetch(apiUrl('/api/auth/logout/'), {
     method: 'POST',
     credentials: 'include',
     headers: {
@@ -36,7 +37,7 @@ async function logoutUser() {
 
 async function loadCurrentUserProfile() {
   try {
-    const response = await fetch('/api/auth/me/', { credentials: 'include' });
+    const response = await fetch(apiUrl('/api/auth/me/'), { credentials: 'include' });
     if (!response.ok) return null;
     const payload = await response.json();
     return payload && payload.authenticated ? payload : null;

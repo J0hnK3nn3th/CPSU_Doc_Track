@@ -2,6 +2,7 @@ import '../css/admin.css';
 import '../css/outgoing.css';
 import { createHeader } from '../header, footer, sidebar/uheader.js';
 import { createSidebar } from '../header, footer, sidebar/usidebar.js';
+import { apiUrl } from './api.js';
 
 const PRIMARY = '#84B179';
 const PRIMARY_LIGHT = '#A2CB8B';
@@ -293,7 +294,7 @@ function buildOutgoingMain(currentUser = null) {
     suggestionsAbortController = new AbortController();
 
     try {
-      const response = await fetch('/api/system-config/categories/', {
+      const response = await fetch(apiUrl('/api/system-config/categories/'), {
         credentials: 'include',
         signal: suggestionsAbortController.signal,
       });
@@ -389,7 +390,7 @@ function buildOutgoingMain(currentUser = null) {
 
 async function requireAuth() {
   try {
-    const res = await fetch('/api/auth/me/', { credentials: 'include' });
+    const res = await fetch(apiUrl('/api/auth/me/'), { credentials: 'include' });
     if (res.ok) return res.json();
   } catch {
     /* network error — fall through */

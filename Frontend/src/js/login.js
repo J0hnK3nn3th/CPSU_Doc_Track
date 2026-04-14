@@ -1,4 +1,5 @@
 import logoUrl from '../images/cpsu logo.png';
+import { apiUrl } from './api.js';
 
 const ACCENT = '#84B179';
 
@@ -8,7 +9,7 @@ function getCookie(name) {
 }
 
 async function ensureCsrf() {
-  await fetch('/api/auth/csrf/', { credentials: 'include' });
+  await fetch(apiUrl('/api/auth/csrf/'), { credentials: 'include' });
 }
 
 function mountLogin(root = document.querySelector('#app')) {
@@ -84,7 +85,7 @@ function mountLogin(root = document.querySelector('#app')) {
     submitBtn.setAttribute('aria-busy', 'true');
 
     try {
-      const res = await fetch('/api/auth/login/', {
+      const res = await fetch(apiUrl('/api/auth/login/'), {
         method: 'POST',
         credentials: 'include',
         headers: {

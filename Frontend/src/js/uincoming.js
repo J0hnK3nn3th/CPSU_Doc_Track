@@ -5,6 +5,7 @@ import '../css/incoming.css';
 import { createHeader } from '../header, footer, sidebar/uheader.js';
 
 import { createSidebar } from '../header, footer, sidebar/usidebar.js';
+import { apiUrl } from './api.js';
 
 
 
@@ -256,7 +257,7 @@ async function requireAuth() {
 
   try {
 
-    const res = await fetch('/api/auth/me/', { credentials: 'include' });
+    const res = await fetch(apiUrl('/api/auth/me/'), { credentials: 'include' });
 
     if (res.ok) return true;
 

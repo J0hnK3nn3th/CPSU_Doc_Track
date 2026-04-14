@@ -2,6 +2,7 @@ import '../css/admin.css';
 import '../css/system_config.css';
 import { createHeader } from '../header, footer, sidebar/header.js';
 import { createSidebar } from '../header, footer, sidebar/sidebar.js';
+import { apiUrl } from './api.js';
 
 const PRIMARY = '#84B179';
 const PRIMARY_LIGHT = '#A2CB8B';
@@ -54,7 +55,7 @@ function actionButtons(id) {
 }
 
 async function requestJson(url, options = {}) {
-  const res = await fetch(url, {
+  const res = await fetch(apiUrl(url), {
     credentials: 'include',
     headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
     ...options,
@@ -526,7 +527,7 @@ function buildSystemConfigMain() {
 
 async function requireAuth() {
   try {
-    const res = await fetch('/api/auth/me/', { credentials: 'include' });
+    const res = await fetch(apiUrl('/api/auth/me/'), { credentials: 'include' });
     if (res.ok) return true;
   } catch {
     /* network error - fall through */

@@ -47,12 +47,12 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
 ]
 
 ROOT_URLCONF = 'CPSU_Doc_Track.urls'
@@ -115,9 +115,22 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-CORS_ALLOWED_ORIGINS = [
+def _split_csv_env(var_name, defaults):
+    raw = os.getenv(var_name, '')
+    if not raw.strip():
+        return defaults
+    return [item.strip() for item in raw.split(',') if item.strip()]
+
+
+DEFAULT_FRONTEND_ORIGINS = [
     "https://cpsu-doc-track-frontend-soke.vercel.app",
+    "http://localhost:3000",
+    "http://localhost:5173",
 ]
+
+CORS_ALLOWED_ORIGINS = _split_csv_env('CORS_ALLOWED_ORIGINS', DEFAULT_FRONTEND_ORIGINS)
+CSRF_TRUSTED_ORIGINS = _split_csv_env('CSRF_TRUSTED_ORIGINS', DEFAULT_FRONTEND_ORIGINS)
+CORS_ALLOW_CREDENTIALS = True
 
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
