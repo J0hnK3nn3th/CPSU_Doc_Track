@@ -1,0 +1,120 @@
+.admin-sidebar {
+  display: flex;
+  flex-direction: column;
+  width: 15.5rem;
+  flex-shrink: 0;
+  align-self: flex-start;
+  position: sticky;
+  top: 0;
+  max-height: 100vh;
+  max-height: 100dvh;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow: hidden;
+  background: linear-gradient(
+    180deg,
+    var(--admin-primary, #84b179) 0%,
+    color-mix(in srgb, var(--admin-primary, #84b179) 88%, #1a3d1a) 100%
+  );
+  color: #fff;
+}
+
+.admin-sidebar__head {
+  padding: 1.35rem 1.15rem 1rem;
+  border-bottom: 1px solid color-mix(in srgb, #fff 18%, transparent);
+}
+
+.admin-sidebar__eyebrow {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+.admin-sidebar__title {
+  margin: 0.2rem 0 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.admin-sidebar__nav {
+  flex: 1;
+  min-height: 0;
+  padding: 0.75rem 0.65rem;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.admin-sidebar__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.admin-sidebar__link {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.55rem 0.65rem;
+  border-radius: 10px;
+  color: color-mix(in srgb, #fff 92%, transparent);
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.admin-sidebar__link:hover {
+  background: color-mix(in srgb, var(--admin-primary-light, #a2cb8b) 35%, transparent);
+  color: #fff;
+}
+
+.admin-sidebar__link:focus-visible {
+  outline: 2px solid var(--admin-primary-light, #a2cb8b);
+  outline-offset: 2px;
+}
+
+.admin-sidebar__link--active {
+  background: color-mix(in srgb, var(--admin-primary-light, #a2cb8b) 42%, #fff);
+  color: #1a3d24;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.admin-sidebar__link--active .admin-sidebar__icon {
+  color: var(--admin-primary, #84b179);
+}
+
+.admin-sidebar__icon {
+  display: flex;
+  flex-shrink: 0;
+  color: color-mix(in srgb, #fff 75%, transparent);
+}
+
+.admin-sidebar__link--active .admin-sidebar__icon,
+.admin-sidebar__link:hover .admin-sidebar__icon {
+  color: inherit;
+}
+
+.admin-sidebar__label {
+  min-width: 0;
+}
+
+.admin-sidebar__foot {
+  padding: 1rem 1.15rem 1.25rem;
+  border-top: 1px solid color-mix(in srgb, #fff 15%, transparent);
+}
+
+.admin-sidebar__hint {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  opacity: 0.88;
+}
