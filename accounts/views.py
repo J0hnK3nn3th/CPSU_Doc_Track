@@ -137,6 +137,7 @@ def auth_me(request):
     return JsonResponse({'authenticated': False}, status=401)
 
 
+@csrf_exempt
 @require_http_methods(['POST'])
 def auth_logout(request):
     logout(request)

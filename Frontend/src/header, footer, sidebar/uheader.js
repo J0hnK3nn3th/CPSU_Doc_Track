@@ -9,18 +9,30 @@ function getCookie(name) {
 }
 
 async function logoutUser() {
-  await fetch(apiUrl('/api/auth/csrf/'), { credentials: 'include' });
+  await fetch(apiUrl('/api/auth/csrf/'), { credentials: 'include' }).catch(() => null);
   const csrfToken = getCookie('csrftoken');
   const response = await fetch(apiUrl('/api/auth/logout/'), {
     method: 'POST',
     credentials: 'include',
     headers: {
+      Accept: 'application/json',
       ...(csrfToken ? { 'X-CSRFToken': csrfToken } : {}),
     },
-  });
+  }).catch(() => null);
 
-  if (!response.ok) {
+  if (!response) {
+    window.location.assign('/login.html');
+    return;
+  }
+
+  if (!response.ok && ![401, 403].includes(response.status)) {
     throw new Error(`Logout failed (${response.status})`);
+  }
+
+  // Treat unauthorized/forbidden as already logged out and redirect.
+  if ([401, 403].includes(response.status)) {
+    window.location.assign('/login.html');
+    return;
   }
 
   let payload = {};
