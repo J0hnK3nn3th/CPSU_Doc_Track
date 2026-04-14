@@ -18,17 +18,26 @@ from urllib.parse import unquote, urlparse
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+def _split_csv_env(var_name, defaults):
+    raw = os.getenv(var_name, '')
+    if not raw.strip():
+        return defaults
+    return [item.strip() for item in raw.split(',') if item.strip()]
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-#cokou4sf%l$k1c=sakak=4pp$!7zasp0!e$kr$!6vts6$t7-b'
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-#cokou4sf%l$k1c=sakak=4pp$!7zasp0!e$kr$!6vts6$t7-b')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1','cpsu-doc-track-1.onrender.com']
+ALLOWED_HOSTS = _split_csv_env(
+    'ALLOWED_HOSTS',
+    ['localhost', '127.0.0.1', 'cpsu-doc-track-1.onrender.com']
+)
 
 
 # Application definition
@@ -117,22 +126,20 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-def _split_csv_env(var_name, defaults):
-    raw = os.getenv(var_name, '')
-    if not raw.strip():
-        return defaults
-    return [item.strip() for item in raw.split(',') if item.strip()]
-
-
 DEFAULT_FRONTEND_ORIGINS = [
     "https://cpsu-doc-track-frontend-soke.vercel.app",
     "http://localhost:3000",
     "http://localhost:5173",
 ]
 
-CORS_ALLOWED_ORIGINS = "https://cpsu-doc-track-frontend-soke.vercel.app",
-CSRF_TRUSTED_ORIGINS = "https://cpsu-doc-track-frontend-soke.vercel.app",
+CORS_ALLOWED_ORIGINS = _split_csv_env('CORS_ALLOWED_ORIGINS', DEFAULT_FRONTEND_ORIGINS)
+CSRF_TRUSTED_ORIGINS = _split_csv_env('CSRF_TRUSTED_ORIGINS', DEFAULT_FRONTEND_ORIGINS)
 CORS_ALLOW_CREDENTIALS = True
+
+# Respect Render's HTTPS proxy and tighten cookies/security in production.
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
 
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
