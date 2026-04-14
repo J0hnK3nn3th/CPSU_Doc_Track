@@ -12,27 +12,16 @@ function ensureStyles() {
       z-index: 9999;
       display: grid;
       place-items: center;
-      background: rgba(255, 255, 255, 0.72);
-      backdrop-filter: blur(2px);
+      background: transparent;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
       opacity: 0;
       pointer-events: none;
-      transition: opacity 0.18s ease;
     }
 
     .app-loading-overlay--visible {
       opacity: 1;
       pointer-events: auto;
-    }
-
-    .app-loading-overlay__card {
-      min-width: 160px;
-      display: grid;
-      place-items: center;
-      padding: 0.85rem 1rem;
-      border-radius: 12px;
-      border: 1px solid #dce4db;
-      background: #fff;
-      box-shadow: 0 10px 30px rgba(32, 48, 31, 0.16);
     }
 
     .app-loading-overlay__spinner {
@@ -61,9 +50,7 @@ function ensureOverlay() {
   overlay.className = 'app-loading-overlay';
   overlay.setAttribute('aria-hidden', 'true');
   overlay.innerHTML = `
-    <div class="app-loading-overlay__card" role="status" aria-live="polite">
-      <span class="app-loading-overlay__spinner" aria-hidden="true"></span>
-    </div>
+    <span class="app-loading-overlay__spinner" role="status" aria-live="polite" aria-label="Loading"></span>
   `;
   document.body.append(overlay);
   return overlay;
