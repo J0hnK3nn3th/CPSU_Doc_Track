@@ -1,5 +1,6 @@
 import { apiUrl } from './api.js';
 import { notify } from './notifications.js';
+import { initNavigationLoading, navigateWithLoading } from './loading.js';
 
 const logoUrl = '/src/images/cpsu%20logo.png';
 
@@ -16,6 +17,7 @@ async function ensureCsrf() {
 
 function mountLogin(root = document.querySelector('#app')) {
   if (!root) return;
+  initNavigationLoading();
 
   root.innerHTML = `
     <main class="login-page">
@@ -134,7 +136,7 @@ function mountLogin(root = document.querySelector('#app')) {
         text: 'Redirecting to your dashboard...',
         timer: 1200,
       });
-      window.location.assign(target);
+      navigateWithLoading(target);
     } catch {
       await notify({
         icon: 'error',

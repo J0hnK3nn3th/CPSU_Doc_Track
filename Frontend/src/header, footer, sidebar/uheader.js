@@ -1,4 +1,5 @@
 import { apiUrl } from '../js/api.js';
+import { initNavigationLoading, navigateWithLoading } from '../js/loading.js';
 
 const logoUrl = '/src/images/cpsu%20logo.png';
 
@@ -21,7 +22,7 @@ async function logoutUser() {
   }).catch(() => null);
 
   if (!response) {
-    window.location.assign('/');
+    navigateWithLoading('/');
     return;
   }
 
@@ -31,7 +32,7 @@ async function logoutUser() {
 
   // Treat unauthorized/forbidden as already logged out and redirect.
   if ([401, 403].includes(response.status)) {
-    window.location.assign('/');
+    navigateWithLoading('/');
     return;
   }
 
@@ -44,7 +45,7 @@ async function logoutUser() {
 
   const redirectTarget =
     typeof payload.redirect === 'string' && payload.redirect ? payload.redirect : '/';
-  window.location.assign(redirectTarget);
+  navigateWithLoading(redirectTarget);
 }
 
 async function loadCurrentUserProfile() {
@@ -62,6 +63,7 @@ async function loadCurrentUserProfile() {
  * @param {{ onMenuToggle?: () => void }} [options]
  */
 export function createHeader({ onMenuToggle } = {}) {
+  initNavigationLoading();
   const header = document.createElement('header');
   header.className = 'admin-header';
   header.innerHTML = `

@@ -2,6 +2,7 @@ import { createHeader } from '../header, footer, sidebar/header.js';
 import { createSidebar } from '../header, footer, sidebar/sidebar.js';
 import { apiUrl } from './api.js';
 import { confirmAction, notify, showInfo } from './notifications.js';
+import { hideLoading, showLoading } from './loading.js';
 
 const PRIMARY = '#84B179';
 const PRIMARY_LIGHT = '#A2CB8B';
@@ -111,8 +112,15 @@ async function setActiveTab(main, tabId) {
     button.setAttribute('aria-selected', isActive ? 'true' : 'false');
     button.setAttribute('tabindex', isActive ? '0' : '-1');
   });
-  await loadTabData(tabId);
-  renderTable(main, tabId);
+  showLoading();
+  try {
+    // Ensure the spinner paints before starting data work.
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    await loadTabData(tabId);
+    renderTable(main, tabId);
+  } finally {
+    hideLoading();
+  }
 }
 
 function buildSystemConfigMain() {

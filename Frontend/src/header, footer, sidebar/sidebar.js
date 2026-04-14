@@ -1,3 +1,5 @@
+import { initNavigationLoading, navigateWithLoading } from '../js/loading.js';
+
 const NAV_ITEMS = [
   {
     id: 'dashboard',
@@ -35,6 +37,7 @@ const NAV_ITEMS = [
  * @param {{ activeId?: string; onSelect?: (id: string) => void }} [options]
  */
 export function createSidebar({ activeId = 'dashboard', onSelect } = {}) {
+  initNavigationLoading();
   const aside = document.createElement('aside');
   aside.className = 'admin-sidebar';
   aside.innerHTML = `
@@ -72,7 +75,9 @@ export function createSidebar({ activeId = 'dashboard', onSelect } = {}) {
       const href = el.getAttribute('href') || '#';
       const navigatesAway = href !== '#' && href !== '';
       if (navigatesAway) {
+        e.preventDefault();
         onSelect?.(id);
+        navigateWithLoading(href);
         return;
       }
       e.preventDefault();

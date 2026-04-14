@@ -1,3 +1,5 @@
+import { initNavigationLoading, navigateWithLoading } from '../js/loading.js';
+
 const NAV_ITEMS = [
   {
     id: 'dashboard',
@@ -28,6 +30,7 @@ const NAV_ITEMS = [
  * }} [options]
  */
 export function createSidebar({ activeId = 'dashboard', onSelect, isAdmin = true, dashboardHref = 'admin.html' } = {}) {
+  initNavigationLoading();
   const visibleIds = isAdmin
     ? NAV_ITEMS.map((item) => item.id)
     : ['dashboard', 'incoming', 'outgoing'];
@@ -72,7 +75,9 @@ export function createSidebar({ activeId = 'dashboard', onSelect, isAdmin = true
       const href = el.getAttribute('href') || '#';
       const navigatesAway = href !== '#' && href !== '';
       if (navigatesAway) {
+        e.preventDefault();
         onSelect?.(id);
+        navigateWithLoading(href);
         return;
       }
       e.preventDefault();
