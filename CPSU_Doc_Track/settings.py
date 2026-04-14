@@ -36,7 +36,7 @@ DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 
 ALLOWED_HOSTS = _split_csv_env(
     'ALLOWED_HOSTS',
-    ['localhost', '127.0.0.1', 'cpsu-doc-track-1.onrender.com']
+    ['localhost', '127.0.0.1', 'https://cpsu-doc-track-1.onrender.com']
 )
 
 
