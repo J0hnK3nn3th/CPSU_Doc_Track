@@ -3,7 +3,8 @@ import { fileURLToPath, URL } from 'node:url';
 
 export default defineConfig({
   root: '.',
-  base: './',
+  // Use absolute asset paths for stable hosting on Vercel/static CDNs.
+  base: '/',
   server: {
     port: 5173,
     strictPort: false,
