@@ -1,4 +1,3 @@
-import '../css/admin.css';
 import { createHeader } from '../header, footer, sidebar/header.js';
 import { createSidebar } from '../header, footer, sidebar/sidebar.js';
 import { apiUrl } from './api.js';

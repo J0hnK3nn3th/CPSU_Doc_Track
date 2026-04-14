@@ -1,6 +1,6 @@
-import './uheader.css';
-import logoUrl from '../images/cpsu logo.png';
 import { apiUrl } from '../js/api.js';
+
+const logoUrl = '/src/images/cpsu%20logo.png';
 
 function getCookie(name) {
   const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -21,7 +21,7 @@ async function logoutUser() {
   }).catch(() => null);
 
   if (!response) {
-    window.location.assign('/login.html');
+    window.location.assign('/');
     return;
   }
 
@@ -31,7 +31,7 @@ async function logoutUser() {
 
   // Treat unauthorized/forbidden as already logged out and redirect.
   if ([401, 403].includes(response.status)) {
-    window.location.assign('/login.html');
+    window.location.assign('/');
     return;
   }
 
@@ -43,7 +43,7 @@ async function logoutUser() {
   }
 
   const redirectTarget =
-    typeof payload.redirect === 'string' && payload.redirect ? payload.redirect : '/login.html';
+    typeof payload.redirect === 'string' && payload.redirect ? payload.redirect : '/';
   window.location.assign(redirectTarget);
 }
 

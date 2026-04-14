@@ -1,7 +1,3 @@
-import '../css/admin.css';
-
-import '../css/incoming.css';
-
 import { createHeader } from '../header, footer, sidebar/uheader.js';
 
 import { createSidebar } from '../header, footer, sidebar/usidebar.js';

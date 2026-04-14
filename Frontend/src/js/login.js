@@ -1,5 +1,6 @@
-import logoUrl from '../images/cpsu logo.png';
 import { apiUrl } from './api.js';
+
+const logoUrl = '/src/images/cpsu%20logo.png';
 
 const ACCENT = '#84B179';
 

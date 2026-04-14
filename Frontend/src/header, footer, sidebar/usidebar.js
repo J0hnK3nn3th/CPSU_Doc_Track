@@ -1,5 +1,3 @@
-import './usidebar.css';
-
 const NAV_ITEMS = [
   {
     id: 'dashboard',

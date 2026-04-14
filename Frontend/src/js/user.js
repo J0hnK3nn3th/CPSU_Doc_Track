@@ -1,5 +1,3 @@
-import '../css/admin.css';
-import '../css/user.css';
 import { createHeader } from '../header, footer, sidebar/uheader.js';
 import { createSidebar } from '../header, footer, sidebar/usidebar.js';
 import { apiUrl } from './api.js';
