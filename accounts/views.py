@@ -1,4 +1,5 @@
 import json
+from urllib.parse import urlsplit
 
 from django.conf import settings
 from django.contrib.auth import authenticate, login, logout
@@ -20,13 +21,36 @@ _TRUSTED_LOGIN_PREFIXES = (
 _TRUSTED_LOGIN_ORIGINS = {p.rstrip('/') for p in _TRUSTED_LOGIN_PREFIXES}
 
 
+def _origin_from_url(value):
+    """Return normalized origin from full URL/header value."""
+    if not value:
+        return ''
+    try:
+        parsed = urlsplit(value.strip())
+    except ValueError:
+        return ''
+    if not parsed.scheme or not parsed.netloc:
+        return ''
+    return f'{parsed.scheme}://{parsed.netloc}'.rstrip('/')
+
+
 def _login_request_allowed(request):
     """Narrow allowlist for CSRF-exempt JSON login (SPA / dev servers)."""
-    origin = (request.headers.get('Origin') or '').strip().rstrip('/')
-    if origin and origin in _TRUSTED_LOGIN_ORIGINS:
+    allowed_origins = set(_TRUSTED_LOGIN_ORIGINS)
+    allowed_origins.update(
+        _origin_from_url(origin) for origin in getattr(settings, 'CSRF_TRUSTED_ORIGINS', [])
+    )
+    allowed_origins.discard('')
+
+    current_origin = _origin_from_url(f'{request.scheme}://{request.get_host()}')
+    if current_origin:
+        allowed_origins.add(current_origin)
+
+    origin = _origin_from_url(request.headers.get('Origin') or '')
+    if origin and origin in allowed_origins:
         return True
-    referer = (request.headers.get('Referer') or '').strip()
-    if any(referer.startswith(p) for p in _TRUSTED_LOGIN_PREFIXES):
+    referer_origin = _origin_from_url(request.headers.get('Referer') or '')
+    if referer_origin and referer_origin in allowed_origins:
         return True
     if settings.DEBUG:
         addr = (request.META.get('REMOTE_ADDR') or '').replace('::ffff:', '')
@@ -141,7 +165,7 @@ def auth_me(request):
 @require_http_methods(['POST'])
 def auth_logout(request):
     logout(request)
-    return JsonResponse({'ok': True, 'redirect': '/login.html'})
+    return JsonResponse({'ok': True, 'redirect': '/'})
 
 
 def _require_authenticated(request):
