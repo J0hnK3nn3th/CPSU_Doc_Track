@@ -28,12 +28,7 @@ SECRET_KEY = 'django-insecure-#cokou4sf%l$k1c=sakak=4pp$!7zasp0!e$kr$!6vts6$t7-b
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-DEFAULT_ALLOWED_HOSTS = [
-    "cpsu-doc-track.onrender.com",
-    "localhost",
-    "127.0.0.1",
-]
-ALLOWED_HOSTS = [host.strip() for host in os.getenv("ALLOWED_HOSTS", ",".join(DEFAULT_ALLOWED_HOSTS)).split(",") if host.strip()]
+ALLOWED_HOSTS = ['localhost', '127.0.0.1','cpsu-doc-track-1.onrender.com']
 
 
 # Application definition
