@@ -1,8 +1,7 @@
-const API_URL = (globalThis.API_URL || "").trim().replace(/\/$/, "");
+const API_URL = "https://cpsu-doc-track-1.onrender.com";
 
 export function apiUrl(path = '') {
   if (/^https?:\/\//i.test(path)) return path;
-  if (!API_URL) return path;
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
   return `${API_URL}${normalizedPath}`;
 }

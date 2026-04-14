@@ -36,7 +36,7 @@ DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 
 ALLOWED_HOSTS = _split_csv_env(
     'ALLOWED_HOSTS',
-    ['localhost', '127.0.0.1', 'https://cpsu-doc-track-1.onrender.com']
+    ['localhost', '127.0.0.1', 'cpsu-doc-track-1.onrender.com']
 )
 
 
@@ -55,6 +55,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -62,7 +63,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 
 ROOT_URLCONF = 'CPSU_Doc_Track.urls'
@@ -129,8 +129,7 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 DEFAULT_FRONTEND_ORIGINS = [
-    "http://localhost:3000",
-    "http://localhost:5173",
+    "https://cpsu-doc-track-1.onrender.com",
 ]
 
 CORS_ALLOWED_ORIGINS = _split_csv_env('CORS_ALLOWED_ORIGINS', DEFAULT_FRONTEND_ORIGINS)
@@ -139,8 +138,10 @@ CORS_ALLOW_CREDENTIALS = True
 
 # Respect Render's HTTPS proxy and tighten cookies/security in production.
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-SESSION_COOKIE_SECURE = not DEBUG
-CSRF_COOKIE_SECURE = not DEBUG
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+CSRF_COOKIE_SAMESITE = "None"
+SESSION_COOKIE_SAMESITE = "None"
 
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
