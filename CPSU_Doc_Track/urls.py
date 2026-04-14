@@ -21,7 +21,7 @@ from django.http import JsonResponse
 from django.urls import include, path
 from django.views.generic import RedirectView
 
-FRONTEND_URL = os.getenv('FRONTEND_URL', 'https://cpsu-doc-track-frontend-soke.vercel.app')
+FRONTEND_URL = os.getenv('FRONTEND_URL', '/api/auth/login/')
 
 urlpatterns = [
     path('', RedirectView.as_view(url=FRONTEND_URL, permanent=False)),

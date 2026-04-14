@@ -127,7 +127,6 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 DEFAULT_FRONTEND_ORIGINS = [
-    "https://cpsu-doc-track-frontend-soke.vercel.app",
     "http://localhost:3000",
     "http://localhost:5173",
 ]
