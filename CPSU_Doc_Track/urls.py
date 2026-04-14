@@ -1,30 +1,17 @@
 """
 URL configuration for CPSU_Doc_Track project.
-
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/6.0/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-import os
 
 from django.contrib import admin
 from django.http import JsonResponse
-from django.urls import include, path
-from django.views.generic import RedirectView
+from django.urls import include, path, re_path
 
-FRONTEND_URL = os.getenv('FRONTEND_URL', '/api/auth/login/')
+from .views import frontend_page, frontend_src_asset, index
 
 urlpatterns = [
-    path('', RedirectView.as_view(url=FRONTEND_URL, permanent=False)),
+    path('', index),
+    re_path(r'^src/(?P<path>.*)$', frontend_src_asset),
+    re_path(r'^(?P<page>admin|incoming|outgoing|system_config|user|uincoming|uoutgoing)\.html$', frontend_page),
     path('health/', lambda request: JsonResponse({'status': 'healthy'})),
     path('admin/', admin.site.urls),
     path('api/', include('accounts.urls')),
