@@ -191,16 +191,8 @@ function buildOutgoingMain(currentUser = null) {
             </div>
             <div class="outgoing-modal__row outgoing-modal__row--textarea">
               <label class="outgoing-modal__label" for="outgoing-modal-description">Description :</label>
-              <textarea
-                class="outgoing-modal__textarea"
-                id="outgoing-modal-description"
-                rows="3"
-                spellcheck="true"
-              ></textarea>
+              <input class="outgoing-modal__input" id="outgoing-modal-description" type="text" />
             </div>
-          </section>
-
-          <section class="outgoing-modal__panel outgoing-modal__panel--right" aria-label="Attachments">
             <h3 class="outgoing-modal__subhead">ATTACHMENTS</h3>
             <div class="outgoing-modal__list-wrap">
               <table class="outgoing-modal__list-table">
@@ -212,6 +204,9 @@ function buildOutgoingMain(currentUser = null) {
                 </tbody>
               </table>
             </div>
+          </section>
+
+          <section class="outgoing-modal__panel outgoing-modal__panel--right" aria-label="Document routing details">
             <div class="outgoing-modal__row outgoing-modal__row--compact">
               <label class="outgoing-modal__label" for="outgoing-modal-prepared-by">Prepared by :</label>
               <input class="outgoing-modal__input" id="outgoing-modal-prepared-by" type="text" />
@@ -238,6 +233,14 @@ function buildOutgoingMain(currentUser = null) {
               />
             </div>
             <div class="outgoing-modal__row outgoing-modal__row--compact">
+              <label class="outgoing-modal__label" for="outgoing-modal-carrier">Carrier :</label>
+              <input class="outgoing-modal__input" id="outgoing-modal-carrier" type="text" />
+            </div>
+            <div class="outgoing-modal__row outgoing-modal__row--compact">
+              <label class="outgoing-modal__label" for="outgoing-modal-remarks">Remarks :</label>
+              <input class="outgoing-modal__input" id="outgoing-modal-remarks" type="text" />
+            </div>
+            <div class="outgoing-modal__row outgoing-modal__row--compact outgoing-modal__row--after-remarks-gap">
               <label class="outgoing-modal__label" for="outgoing-modal-received-date">Received Date :</label>
               <input
                 class="outgoing-modal__input"
@@ -256,10 +259,6 @@ function buildOutgoingMain(currentUser = null) {
                 readonly
                 aria-readonly="true"
               />
-            </div>
-            <div class="outgoing-modal__row outgoing-modal__row--compact">
-              <label class="outgoing-modal__label" for="outgoing-modal-remarks">Remarks :</label>
-              <input class="outgoing-modal__input" id="outgoing-modal-remarks" type="text" />
             </div>
           </section>
         </div>
@@ -710,7 +709,9 @@ function buildOutgoingMain(currentUser = null) {
     const subjectEl = main.querySelector('#outgoing-modal-subject');
     if (subjectEl instanceof HTMLInputElement) subjectEl.value = row.subject || '';
     const descriptionEl = main.querySelector('#outgoing-modal-description');
-    if (descriptionEl instanceof HTMLTextAreaElement) descriptionEl.value = row.description || '';
+    if (descriptionEl instanceof HTMLInputElement || descriptionEl instanceof HTMLTextAreaElement) {
+      descriptionEl.value = row.description || '';
+    }
     if (modalPreparedBy instanceof HTMLInputElement) modalPreparedBy.value = row.prepared_by || '';
     if (modalRecipientInput instanceof HTMLInputElement) modalRecipientInput.value = row.recipient_name || '';
     if (modalRecipientDeptInput instanceof HTMLInputElement) {
@@ -755,7 +756,9 @@ function buildOutgoingMain(currentUser = null) {
     const subjectEl = main.querySelector('#outgoing-modal-subject');
     if (subjectEl instanceof HTMLInputElement) subjectEl.value = '';
     const descriptionEl = main.querySelector('#outgoing-modal-description');
-    if (descriptionEl instanceof HTMLTextAreaElement) descriptionEl.value = '';
+    if (descriptionEl instanceof HTMLInputElement || descriptionEl instanceof HTMLTextAreaElement) {
+      descriptionEl.value = '';
+    }
     if (modalPreparedBy instanceof HTMLInputElement) modalPreparedBy.value = '';
     if (modalRecipientInput instanceof HTMLInputElement) modalRecipientInput.value = '';
     if (modalRecipientDeptInput instanceof HTMLInputElement) modalRecipientDeptInput.value = '';

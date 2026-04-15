@@ -375,6 +375,10 @@ body.outgoing-modal-open {
   margin-top: 0.4rem;
 }
 
+.outgoing-modal__row--after-remarks-gap {
+  margin-top: 2.65rem;
+}
+
 .outgoing-modal__label {
   color: #243624;
   font-size: 0.83rem;
