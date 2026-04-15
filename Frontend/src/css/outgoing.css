@@ -401,7 +401,7 @@ body.outgoing-modal-open {
 }
 
 .outgoing-modal__textarea {
-  min-height: 5rem;
+  min-height: 2.25rem;
   resize: vertical;
 }
 
@@ -508,6 +508,48 @@ body.outgoing-modal-open {
 
 .outgoing-modal__flow {
   margin: 0 1rem 0.85rem;
+}
+
+.outgoing-table__actions {
+  white-space: nowrap;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.outgoing-table__view-btn {
+  padding: 0.28rem 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid var(--admin-border);
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+  color: var(--admin-text);
+  font: inherit;
+}
+
+.outgoing-table__view-btn:hover {
+  background: color-mix(in srgb, var(--admin-primary) 12%, #fff);
+  border-color: var(--admin-primary);
+}
+
+.outgoing-table__view-btn:focus-visible {
+  outline: 2px solid var(--admin-primary-light);
+  outline-offset: 2px;
+}
+
+.outgoing-modal--view .outgoing-modal__input,
+.outgoing-modal--view .outgoing-modal__textarea {
+  background: #f7faf7;
+  cursor: default;
+  color: var(--admin-text);
+}
+
+/* Hide edit actions in read-only view (same modal as new document) */
+.outgoing-modal--view #outgoing-modal-save-btn,
+.outgoing-modal--view #outgoing-modal-barcode-btn,
+.outgoing-modal--view #outgoing-modal-preview-btn {
+  display: none !important;
 }
 
 @media (max-width: 1050px) {

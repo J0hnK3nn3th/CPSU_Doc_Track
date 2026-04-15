@@ -10,7 +10,7 @@ from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.views.decorators.http import require_http_methods
 from django.shortcuts import get_object_or_404
 
-from .models import DocumentType, OfficeDepartment, UserRoleConfig
+from .models import DocumentType, OfficeDepartment, OutgoingDocument, UserRoleConfig
 
 _TRUSTED_LOGIN_PREFIXES = (
     'http://localhost:5173/',
@@ -331,3 +331,76 @@ def system_config_enable(request, tab_name, item_id):
     obj.is_active = True
     obj.save(update_fields=['is_active', 'updated_at'])
     return JsonResponse({'row': _serialize_item(tab_name, obj)})
+
+
+def _serialize_outgoing_document(obj):
+    return {
+        'id': obj.id,
+        'document_code': obj.document_code,
+        'document_state': obj.document_state,
+        'office_name': obj.office_name or '',
+        'date_created': obj.created_at.strftime('%b %d, %Y'),
+        'subject': obj.subject,
+        'category': obj.category,
+        'prepared_by': obj.prepared_by,
+        'recipient_name': obj.recipient_name or '',
+        'recipient_department': obj.recipient_department or '',
+        'remarks': obj.remarks or '',
+        'description': obj.description or '',
+    }
+
+
+@csrf_exempt
+@require_http_methods(['GET', 'HEAD', 'POST'])
+def outgoing_documents_collection(request):
+    auth_error = _require_authenticated(request)
+    if auth_error:
+        return auth_error
+
+    if request.method != 'POST':
+        rows = [_serialize_outgoing_document(obj) for obj in OutgoingDocument.objects.all()]
+        return JsonResponse({'rows': rows})
+
+    payload = _parse_json(request)
+    if payload is None:
+        return JsonResponse({'error': 'Invalid JSON.'}, status=400)
+
+    document_code = (payload.get('document_code') or '').strip()
+    subject = (payload.get('subject') or '').strip()
+    if not document_code or not subject:
+        return JsonResponse(
+            {'error': 'Document code and subject are required.'},
+            status=400,
+        )
+
+    obj = OutgoingDocument(
+        document_code=document_code,
+        document_state=(payload.get('document_state') or 'NEW').strip() or 'NEW',
+        category=(payload.get('category') or '').strip(),
+        subject=subject,
+        description=(payload.get('description') or '').strip(),
+        prepared_by=(payload.get('prepared_by') or '').strip(),
+        recipient_name=(payload.get('recipient_name') or '').strip(),
+        recipient_department=(payload.get('recipient_department') or '').strip(),
+        remarks=(payload.get('remarks') or '').strip(),
+        office_name=(payload.get('office_name') or '').strip(),
+    )
+    if request.user.is_authenticated:
+        obj.created_by = request.user
+
+    try:
+        obj.save()
+    except Exception as exc:
+        return JsonResponse({'error': str(exc)}, status=400)
+
+    return JsonResponse({'row': _serialize_outgoing_document(obj)}, status=201)
+
+
+@require_http_methods(['GET', 'HEAD'])
+def outgoing_document_detail(request, pk):
+    auth_error = _require_authenticated(request)
+    if auth_error:
+        return auth_error
+
+    obj = get_object_or_404(OutgoingDocument, pk=pk)
+    return JsonResponse({'row': _serialize_outgoing_document(obj)})

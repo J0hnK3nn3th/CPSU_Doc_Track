@@ -11,4 +11,6 @@ urlpatterns = [
     path('system-config/<str:tab_name>/<int:item_id>/', views.system_config_item, name='system_config_item'),
     path('system-config/<str:tab_name>/<int:item_id>/disable/', views.system_config_disable, name='system_config_disable'),
     path('system-config/<str:tab_name>/<int:item_id>/enable/', views.system_config_enable, name='system_config_enable'),
+    path('outgoing-documents/<int:pk>/', views.outgoing_document_detail, name='outgoing_document_detail'),
+    path('outgoing-documents/', views.outgoing_documents_collection, name='outgoing_documents_collection'),
 ]
