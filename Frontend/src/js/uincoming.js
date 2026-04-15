@@ -506,7 +506,30 @@ function buildIncomingMain(currentUser) {
     }
   });
 
+  main.openIncomingById = openViewModal;
   return main;
+}
+
+function getRequestedIncomingDocId() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const docId = Number(params.get('docId'));
+    if (!Number.isInteger(docId) || docId <= 0) return null;
+    return docId;
+  } catch {
+    return null;
+  }
+}
+
+function clearRequestedIncomingDocId() {
+  try {
+    const current = new URL(window.location.href);
+    if (!current.searchParams.has('docId')) return;
+    current.searchParams.delete('docId');
+    window.history.replaceState({}, '', `${current.pathname}${current.search}${current.hash}`);
+  } catch {
+    // no-op
+  }
 }
 
 async function requireAuth() {
@@ -560,6 +583,11 @@ async function mountIncoming(root = document.querySelector('#app')) {
   root.append(layout);
 
   await loadIncomingDocuments(main, currentUser);
+  const requestedDocId = getRequestedIncomingDocId();
+  if (requestedDocId && typeof main.openIncomingById === 'function') {
+    await main.openIncomingById(requestedDocId);
+    clearRequestedIncomingDocId();
+  }
 
   backdrop.addEventListener('click', closeSidebar);
   window.addEventListener(
