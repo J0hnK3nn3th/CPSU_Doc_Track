@@ -29,6 +29,10 @@ function normalizeUserLabel(value) {
   return String(value || '').trim().toLowerCase();
 }
 
+function isReceivedState(value) {
+  return String(value || '').trim().toLowerCase() === 'received';
+}
+
 function getPreparedByFromUser(currentUser) {
   const firstName = String(currentUser?.first_name || '').trim();
   const middleName = String(currentUser?.middle_name || '').trim();
@@ -234,10 +238,29 @@ function buildOutgoingMain(currentUser = null) {
               />
             </div>
             <div class="outgoing-modal__row outgoing-modal__row--compact">
+              <label class="outgoing-modal__label" for="outgoing-modal-received-date">Received Date :</label>
+              <input
+                class="outgoing-modal__input"
+                id="outgoing-modal-received-date"
+                type="text"
+                readonly
+                aria-readonly="true"
+              />
+            </div>
+            <div class="outgoing-modal__row outgoing-modal__row--compact">
+              <label class="outgoing-modal__label" for="outgoing-modal-received-by">Received By :</label>
+              <input
+                class="outgoing-modal__input"
+                id="outgoing-modal-received-by"
+                type="text"
+                readonly
+                aria-readonly="true"
+              />
+            </div>
+            <div class="outgoing-modal__row outgoing-modal__row--compact">
               <label class="outgoing-modal__label" for="outgoing-modal-remarks">Remarks :</label>
               <input class="outgoing-modal__input" id="outgoing-modal-remarks" type="text" />
             </div>
-            <button type="button" class="outgoing-modal__preview-btn" id="outgoing-modal-preview-btn">PREVIEW</button>
           </section>
         </div>
 
@@ -329,11 +352,12 @@ function buildOutgoingMain(currentUser = null) {
   const modalDocCodeSuggestions = main.querySelector('#outgoing-doc-code-suggestions');
   const modalRecipientInput = main.querySelector('#outgoing-modal-recipient');
   const modalRecipientDeptInput = main.querySelector('#outgoing-modal-recipient-dept');
+  const modalReceivedDateInput = main.querySelector('#outgoing-modal-received-date');
+  const modalReceivedByInput = main.querySelector('#outgoing-modal-received-by');
   const modalRecipientSuggestions = main.querySelector('#outgoing-recipient-suggestions');
   const modalTitle = main.querySelector('#outgoing-modal-title');
   const saveBtn = main.querySelector('#outgoing-modal-save-btn');
   const barcodeBtn = main.querySelector('#outgoing-modal-barcode-btn');
-  const previewBtn = main.querySelector('#outgoing-modal-preview-btn');
   const categoryByCode = new Map();
   const suggestionCache = new Map();
   const recipientSuggestionCache = new Map();
@@ -533,6 +557,13 @@ function buildOutgoingMain(currentUser = null) {
     }
   };
 
+  const setReceivedMetaFields = (row) => {
+    const receivedDate = isReceivedState(row?.document_state) ? (row?.received_date || '') : '';
+    const receivedBy = isReceivedState(row?.document_state) ? (row?.received_by || '') : '';
+    if (modalReceivedDateInput instanceof HTMLInputElement) modalReceivedDateInput.value = receivedDate;
+    if (modalReceivedByInput instanceof HTMLInputElement) modalReceivedByInput.value = receivedBy;
+  };
+
   if (modalDocCodeInput instanceof HTMLInputElement) {
     modalDocCodeInput.addEventListener('input', () => {
       if (fetchSuggestionsTimer) clearTimeout(fetchSuggestionsTimer);
@@ -631,7 +662,7 @@ function buildOutgoingMain(currentUser = null) {
     if (!modal) return;
     modal.classList.toggle('outgoing-modal--view', isView);
     if (modalTitle) modalTitle.textContent = isView ? 'VIEW OUTGOING DOCUMENT' : 'OUTGOING DOCUMENT';
-    [saveBtn, barcodeBtn, previewBtn].forEach((btn) => {
+    [saveBtn, barcodeBtn].forEach((btn) => {
       if (!(btn instanceof HTMLElement)) return;
       btn.hidden = isView;
       btn.toggleAttribute('hidden', isView);
@@ -685,6 +716,7 @@ function buildOutgoingMain(currentUser = null) {
     if (modalRecipientDeptInput instanceof HTMLInputElement) {
       modalRecipientDeptInput.value = row.recipient_department || '';
     }
+    setReceivedMetaFields(row);
     const remarksEl = main.querySelector('#outgoing-modal-remarks');
     if (remarksEl instanceof HTMLInputElement) remarksEl.value = row.remarks || '';
     renderModalDocumentFlow(row);
@@ -727,6 +759,7 @@ function buildOutgoingMain(currentUser = null) {
     if (modalPreparedBy instanceof HTMLInputElement) modalPreparedBy.value = '';
     if (modalRecipientInput instanceof HTMLInputElement) modalRecipientInput.value = '';
     if (modalRecipientDeptInput instanceof HTMLInputElement) modalRecipientDeptInput.value = '';
+    setReceivedMetaFields(null);
     const remarksEl = main.querySelector('#outgoing-modal-remarks');
     if (remarksEl instanceof HTMLInputElement) remarksEl.value = '';
     renderCodeSuggestions([]);
@@ -786,6 +819,7 @@ function buildOutgoingMain(currentUser = null) {
       if (!res.ok) throw new Error(data.error || 'Save failed');
       if (data.row) {
         appendOutgoingTableRow(data.row);
+        setReceivedMetaFields(data.row);
         renderModalDocumentFlow(data.row);
       }
       await notify({

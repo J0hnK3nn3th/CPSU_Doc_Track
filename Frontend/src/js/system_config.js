@@ -105,8 +105,9 @@ function renderTable(main, tabId) {
   const addNewButton = main.querySelector('#sys-config-add-new-btn');
   const theadRow = main.querySelector('#sys-config-table-head-row');
   const tbody = main.querySelector('#sys-config-table-body');
+  const tableWrap = main.querySelector('.sys-config-table-wrap');
 
-  if (!title || !addNewButton || !theadRow || !tbody) return;
+  if (!title || !addNewButton || !theadRow || !tbody || !tableWrap) return;
 
   title.textContent = dataset.label;
   addNewButton.setAttribute('data-tab', tabId);
@@ -114,6 +115,7 @@ function renderTable(main, tabId) {
   tbody.innerHTML = state.rowsByTab[tabId]
     .map((row) => `<tr>${dataset.mapRow(row).map((value) => `<td>${value}</td>`).join('')}<td>${actionButtons(row)}</td></tr>`)
     .join('');
+  tableWrap.classList.toggle('sys-config-table-wrap--scrollable', state.rowsByTab[tabId].length > 7);
 }
 
 async function setActiveTab(main, tabId) {

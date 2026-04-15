@@ -1,4 +1,5 @@
 import { initNavigationLoading, navigateWithLoading } from '../js/loading.js';
+import { apiUrl } from '../js/api.js';
 
 const NAV_ITEMS = [
   {
@@ -21,6 +22,35 @@ const NAV_ITEMS = [
   },
 ];
 
+function getOfficeDepartmentLabel(user) {
+  return String(
+    user?.office_department ||
+      user?.department ||
+      user?.office_name ||
+      user?.office ||
+      '',
+  ).trim();
+}
+
+async function loadCurrentUserOfficeDepartment() {
+  try {
+    const response = await fetch(apiUrl('/api/auth/me/'), { credentials: 'include' });
+    if (!response.ok) return '';
+    const user = await response.json();
+    return getOfficeDepartmentLabel(user);
+  } catch {
+    return '';
+  }
+}
+
+async function hydrateOfficeDepartment(aside, initialLabel = '') {
+  const titleEl = aside.querySelector('.admin-sidebar__title');
+  if (!titleEl) return;
+  titleEl.textContent = initialLabel || 'Loading...';
+  const fetched = await loadCurrentUserOfficeDepartment();
+  titleEl.textContent = fetched || initialLabel || '';
+}
+
 /**
  * @param {{
  *   activeId?: string;
@@ -40,10 +70,11 @@ export function createSidebar({ activeId = 'dashboard', onSelect, isAdmin = true
 
   const aside = document.createElement('aside');
   aside.className = 'admin-sidebar';
+  const officeDepartmentLabel = isAdmin ? 'Admin' : '';
   aside.innerHTML = `
     <div class="admin-sidebar__head">
-      <p class="admin-sidebar__eyebrow">Navigation</p>
-      <p class="admin-sidebar__title">${isAdmin ? 'Admin' : 'User'}</p>
+      <p class="admin-sidebar__eyebrow">Office/Department:</p>
+      <p class="admin-sidebar__title">${officeDepartmentLabel}</p>
     </div>
     <nav class="admin-sidebar__nav" aria-label="Main">
       <ul class="admin-sidebar__list">
@@ -67,6 +98,10 @@ export function createSidebar({ activeId = 'dashboard', onSelect, isAdmin = true
       <p class="admin-sidebar__hint">Document routing &amp; compliance</p>
     </div>
   `;
+
+  if (!isAdmin) {
+    void hydrateOfficeDepartment(aside, officeDepartmentLabel);
+  }
 
   aside.querySelectorAll('[data-nav]').forEach((el) => {
     el.addEventListener('click', (e) => {

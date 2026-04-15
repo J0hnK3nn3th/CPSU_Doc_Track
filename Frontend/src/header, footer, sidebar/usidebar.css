@@ -38,6 +38,8 @@
   font-size: 1.125rem;
   font-weight: 700;
   letter-spacing: -0.02em;
+  line-height: 1.35;
+  word-break: break-word;
 }
 
 .admin-sidebar__nav {

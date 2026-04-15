@@ -9,6 +9,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.views.decorators.http import require_http_methods
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 
 from .models import DocumentType, OfficeDepartment, OutgoingDocument, UserRoleConfig
 
@@ -150,6 +151,8 @@ def auth_me(request):
             (role_user.last_name if role_user else request.user.last_name) or ''
         )
         middle_name = (role_user.middle_name if role_user else '') or ''
+        office_department = (role_user.office_department if role_user else '') or ''
+        position_role = (role_user.position_role if role_user else '') or ''
         return JsonResponse({
             'authenticated': True,
             'username': request.user.username,
@@ -157,6 +160,8 @@ def auth_me(request):
             'first_name': first_name,
             'middle_name': middle_name,
             'last_name': last_name,
+            'office_department': office_department,
+            'position_role': position_role,
         })
     return JsonResponse({'authenticated': False}, status=401)
 
@@ -358,7 +363,49 @@ def _serialize_outgoing_document(obj):
         'recipient_department': obj.recipient_department or '',
         'remarks': obj.remarks or '',
         'description': obj.description or '',
+        'received_by': obj.received_by or '',
+        'received_date': obj.received_at.strftime('%b %d, %Y') if obj.received_at else '',
     }
+
+
+def _normalize_token(value):
+    return str(value or '').strip().lower()
+
+
+def _user_display_name(request):
+    role_user = UserRoleConfig.objects.filter(
+        username__iexact=request.user.username,
+        is_active=True,
+    ).first()
+    first_name = ((role_user.first_name if role_user else request.user.first_name) or '').strip()
+    middle_name = ((role_user.middle_name if role_user else '') or '').strip()
+    last_name = ((role_user.last_name if role_user else request.user.last_name) or '').strip()
+    middle_initial = f'{middle_name[:1].upper()}.' if middle_name else ''
+    display_name = ' '.join(p for p in [first_name, middle_initial, last_name] if p).strip()
+    return display_name or request.user.username
+
+
+def _recipient_matches_authenticated_user(request, obj):
+    recipient = _normalize_token(obj.recipient_name)
+    if not recipient:
+        return False
+    role_user = UserRoleConfig.objects.filter(
+        username__iexact=request.user.username,
+        is_active=True,
+    ).first()
+    first_name = ((role_user.first_name if role_user else request.user.first_name) or '').strip()
+    middle_name = ((role_user.middle_name if role_user else '') or '').strip()
+    last_name = ((role_user.last_name if role_user else request.user.last_name) or '').strip()
+    middle_initial = middle_name[:1].upper() if middle_name else ''
+
+    aliases = {
+        _normalize_token(request.user.username),
+        _normalize_token(f'{first_name} {last_name}'),
+        _normalize_token(f'{first_name} {middle_name} {last_name}'),
+        _normalize_token(f'{first_name} {middle_initial}. {last_name}'),
+    }
+    aliases.discard('')
+    return recipient in aliases
 
 
 @csrf_exempt
@@ -407,11 +454,28 @@ def outgoing_documents_collection(request):
     return JsonResponse({'row': _serialize_outgoing_document(obj)}, status=201)
 
 
-@require_http_methods(['GET', 'HEAD'])
+@csrf_exempt
+@require_http_methods(['GET', 'HEAD', 'PATCH'])
 def outgoing_document_detail(request, pk):
     auth_error = _require_authenticated(request)
     if auth_error:
         return auth_error
 
     obj = get_object_or_404(OutgoingDocument, pk=pk)
+    if request.method == 'PATCH':
+        payload = _parse_json(request)
+        if payload is None:
+            return JsonResponse({'error': 'Invalid JSON.'}, status=400)
+        new_state = (payload.get('document_state') or '').strip().upper()
+        if new_state != 'RECEIVED':
+            return JsonResponse({'error': 'Only RECEIVED state update is allowed.'}, status=400)
+        if not _recipient_matches_authenticated_user(request, obj):
+            return JsonResponse({'error': 'Only the intended receiver can receive this document.'}, status=403)
+
+        obj.document_state = 'RECEIVED'
+        obj.received_by = _user_display_name(request)
+        obj.received_at = timezone.now()
+        obj.save(update_fields=['document_state', 'received_by', 'received_at', 'updated_at'])
+        return JsonResponse({'row': _serialize_outgoing_document(obj)})
+
     return JsonResponse({'row': _serialize_outgoing_document(obj)})

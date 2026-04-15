@@ -42,8 +42,8 @@ export function createSidebar({ activeId = 'dashboard', onSelect } = {}) {
   aside.className = 'admin-sidebar';
   aside.innerHTML = `
     <div class="admin-sidebar__head">
-      <p class="admin-sidebar__eyebrow">Navigation</p>
-      <p class="admin-sidebar__title">Admin</p>
+      <p class="admin-sidebar__eyebrow">Office/Department:</p>
+      <p class="admin-sidebar__title">System Administrator</p>
     </div>
     <nav class="admin-sidebar__nav" aria-label="Main">
       <ul class="admin-sidebar__list">

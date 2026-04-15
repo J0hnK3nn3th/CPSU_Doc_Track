@@ -140,6 +140,12 @@
   border-radius: 10px;
   background: #fff;
   overflow: auto;
+  position: relative;
+}
+
+.sys-config-table-wrap--scrollable {
+  max-height: 22rem;
+  overflow-y: auto;
 }
 
 .sys-config-table {
@@ -158,12 +164,12 @@
 }
 
 .sys-config-table th {
-  background: transparent;
+  background: color-mix(in srgb, var(--admin-primary-light) 20%, #fff);
   color: color-mix(in srgb, var(--admin-primary) 42%, var(--admin-text));
   border-bottom: 2px solid var(--admin-primary);
   position: sticky;
   top: 0;
-  z-index: 1;
+  z-index: 3;
 }
 
 .sys-config-table th,

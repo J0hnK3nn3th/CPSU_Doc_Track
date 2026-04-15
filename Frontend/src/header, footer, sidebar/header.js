@@ -91,7 +91,7 @@ export function createHeader({ onMenuToggle } = {}) {
           aria-expanded="false"
           aria-label="User menu"
         >
-          <span class="admin-header__user-avatar" aria-hidden="true">A</span>
+          <span class="admin-header__user-avatar" aria-hidden="true">SA</span>
           <span class="admin-header__user-name">System Administrator</span>
         </button>
         <div class="admin-header__dropdown-menu" hidden>

@@ -58,6 +58,8 @@ class OutgoingDocument(models.Model):
     recipient_department = models.CharField(max_length=200, blank=True)
     remarks = models.TextField(blank=True)
     office_name = models.CharField(max_length=200, blank=True)
+    received_by = models.CharField(max_length=300, blank=True)
+    received_at = models.DateTimeField(null=True, blank=True)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         null=True,
