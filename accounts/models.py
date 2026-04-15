@@ -3,7 +3,8 @@ from django.db import models
 
 
 class DocumentType(models.Model):
-    code = models.CharField(max_length=50, unique=True)
+    document_type_id = models.BigAutoField(primary_key=True)
+    code = models.CharField(max_length=50)
     name = models.CharField(max_length=150)
     description = models.TextField(blank=True)
     is_active = models.BooleanField(default=True)
@@ -15,7 +16,8 @@ class DocumentType(models.Model):
 
 
 class OfficeDepartment(models.Model):
-    code = models.CharField(max_length=50, unique=True)
+    office_department_id = models.BigAutoField(primary_key=True)
+    code = models.CharField(max_length=50)
     name = models.CharField(max_length=150)
     head = models.CharField(max_length=150, blank=True)
     description = models.TextField(blank=True)
@@ -28,6 +30,7 @@ class OfficeDepartment(models.Model):
 
 
 class UserRoleConfig(models.Model):
+    user_role_id = models.BigAutoField(primary_key=True)
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
     middle_name = models.CharField(max_length=100, blank=True)

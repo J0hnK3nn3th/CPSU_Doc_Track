@@ -12,18 +12,21 @@ const SYSTEM_CONFIG_DATA = {
     label: 'Document Type',
     columns: ['Document Code', 'Document Type', 'Description', 'Status'],
     endpoint: 'categories',
+    idField: 'document_type_id',
     mapRow: (row) => [row.code || '-', row.name || '-', row.description || '-', row.status || '-'],
   },
   offices: {
     label: 'Offices and Departments',
     columns: ['Office Code', 'Office/Department', 'Head', 'Status'],
     endpoint: 'offices',
+    idField: 'office_department_id',
     mapRow: (row) => [row.code || '-', row.name || '-', row.head || '-', row.status || '-'],
   },
   usersRoles: {
     label: 'Users and Roles',
     columns: ['Username', 'Full Name', 'Office', 'Role', 'Status'],
     endpoint: 'usersRoles',
+    idField: 'user_role_id',
     mapRow: (row) => [row.username || '-', row.full_name || '-', row.office_department || '-', row.position_role || '-', row.status || '-'],
   },
 };
@@ -51,7 +54,16 @@ function isDisabledRow(row) {
   return String(row?.status || '').toLowerCase() === 'disabled';
 }
 
+function getRowId(tabId, row) {
+  const fieldName = SYSTEM_CONFIG_DATA[tabId]?.idField;
+  const rawId = row?.id ?? (fieldName ? row?.[fieldName] : null);
+  const numericId = Number(rawId);
+  return Number.isFinite(numericId) ? numericId : null;
+}
+
 function actionButtons(row) {
+  const rowId = getRowId(state.activeTab, row);
+  if (!rowId) return '';
   const disabled = isDisabledRow(row);
   const toggleAction = disabled ? 'enable' : 'disable';
   const toggleTitle = disabled ? 'Enable' : 'Disable';
@@ -59,9 +71,9 @@ function actionButtons(row) {
 
   return `
     <div class="sys-config-actions">
-      <button type="button" class="sys-config-action-btn" data-action="view" data-id="${row.id}" title="View">${iconSvg('view')}</button>
-      <button type="button" class="sys-config-action-btn" data-action="edit" data-id="${row.id}" title="Edit">${iconSvg('edit')}</button>
-      <button type="button" class="sys-config-action-btn ${toggleModifier}" data-action="${toggleAction}" data-id="${row.id}" title="${toggleTitle}">${iconSvg(toggleAction)}</button>
+      <button type="button" class="sys-config-action-btn" data-action="view" data-id="${rowId}" title="View">${iconSvg('view')}</button>
+      <button type="button" class="sys-config-action-btn" data-action="edit" data-id="${rowId}" title="Edit">${iconSvg('edit')}</button>
+      <button type="button" class="sys-config-action-btn ${toggleModifier}" data-action="${toggleAction}" data-id="${rowId}" title="${toggleTitle}">${iconSvg(toggleAction)}</button>
     </div>
   `;
 }
@@ -429,18 +441,20 @@ function buildSystemConfigMain() {
   };
 
   const openModalForTab = async (tabId, row = null) => {
-    state.editRowByTab[tabId] = row;
     if (tabId === 'categories') {
       openCategoryModal();
+      state.editRowByTab[tabId] = row;
       if (row) fillForm(tabId, row);
       return;
     }
     if (tabId === 'offices') {
       openOfficeDepartmentModal();
+      state.editRowByTab[tabId] = row;
       if (row) fillForm(tabId, row);
       return;
     }
     await openUsersRolesModal(row?.office_department || '');
+    state.editRowByTab[tabId] = row;
     if (row) fillForm(tabId, row);
   };
 
@@ -467,10 +481,11 @@ function buildSystemConfigMain() {
       const tabId = button.getAttribute('data-save-tab');
       if (!tabId) return;
       const editingRow = state.editRowByTab[tabId];
+      const editingId = getRowId(tabId, editingRow);
       const payload = collectPayload(tabId);
       try {
-        if (editingRow?.id) {
-          await requestJson(`/api/system-config/${tabId}/${editingRow.id}/`, {
+        if (editingId) {
+          await requestJson(`/api/system-config/${tabId}/${editingId}/`, {
             method: 'PUT',
             body: JSON.stringify(payload),
           });
@@ -507,7 +522,7 @@ function buildSystemConfigMain() {
     const action = button.getAttribute('data-action');
     const itemId = Number(button.getAttribute('data-id'));
     const rows = state.rowsByTab[state.activeTab];
-    const row = rows.find((item) => item.id === itemId);
+    const row = rows.find((item) => getRowId(state.activeTab, item) === itemId);
     if (!row) return;
 
     if (action === 'view') {

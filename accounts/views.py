@@ -193,7 +193,8 @@ def _parse_json(request):
 def _serialize_item(tab_name, obj):
     if tab_name == 'categories':
         return {
-            'id': obj.id,
+            'id': obj.pk,
+            'document_type_id': obj.pk,
             'code': obj.code,
             'name': obj.name,
             'description': obj.description,
@@ -201,14 +202,16 @@ def _serialize_item(tab_name, obj):
         }
     if tab_name == 'offices':
         return {
-            'id': obj.id,
+            'id': obj.pk,
+            'office_department_id': obj.pk,
             'code': obj.code,
             'name': obj.name,
             'head': obj.head,
             'status': 'Active' if obj.is_active else 'Disabled',
         }
     return {
-        'id': obj.id,
+        'id': obj.pk,
+        'user_role_id': obj.pk,
         'username': obj.username,
         'full_name': f'{obj.first_name} {obj.last_name}'.strip(),
         'office_department': obj.office_department,
@@ -222,7 +225,7 @@ def _serialize_item(tab_name, obj):
     }
 
 
-def _apply_payload(tab_name, obj, payload):
+def _apply_payload(tab_name, obj, payload, *, is_update=False):
     if tab_name == 'categories':
         obj.code = (payload.get('code') or '').strip()
         obj.name = (payload.get('name') or '').strip()
@@ -240,8 +243,16 @@ def _apply_payload(tab_name, obj, payload):
     obj.name_extension = (payload.get('name_extension') or '').strip()
     obj.office_department = (payload.get('office_department') or '').strip()
     obj.position_role = (payload.get('position_role') or '').strip()
-    obj.username = (payload.get('username') or '').strip()
-    obj.password = payload.get('password') or obj.password
+
+    username = (payload.get('username') or '').strip()
+    password = payload.get('password') or ''
+    if username:
+        obj.username = username
+    if password:
+        obj.password = password
+
+    if is_update:
+        return obj.first_name and obj.last_name and obj.office_department and obj.position_role
     return obj.first_name and obj.last_name and obj.office_department and obj.position_role and obj.username and obj.password
 
 
@@ -265,7 +276,7 @@ def system_config_collection(request, tab_name):
         return JsonResponse({'error': 'Invalid JSON.'}, status=400)
 
     obj = model()
-    if not _apply_payload(tab_name, obj, payload):
+    if not _apply_payload(tab_name, obj, payload, is_update=False):
         return JsonResponse({'error': 'Please fill in required fields.'}, status=400)
     try:
         obj.save()
@@ -290,7 +301,7 @@ def system_config_item(request, tab_name, item_id):
         return JsonResponse({'error': 'Invalid JSON.'}, status=400)
 
     obj = get_object_or_404(model, pk=item_id)
-    if not _apply_payload(tab_name, obj, payload):
+    if not _apply_payload(tab_name, obj, payload, is_update=True):
         return JsonResponse({'error': 'Please fill in required fields.'}, status=400)
     try:
         obj.save()

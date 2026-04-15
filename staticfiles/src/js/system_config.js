@@ -10,18 +10,21 @@ const SYSTEM_CONFIG_DATA = {
     label: 'Document Type',
     columns: ['Document Code', 'Document Type', 'Description', 'Status'],
     endpoint: 'categories',
+    idField: 'document_type_id',
     mapRow: (row) => [row.code || '-', row.name || '-', row.description || '-', row.status || '-'],
   },
   offices: {
     label: 'Offices and Departments',
     columns: ['Office Code', 'Office/Department', 'Head', 'Status'],
     endpoint: 'offices',
+    idField: 'office_department_id',
     mapRow: (row) => [row.code || '-', row.name || '-', row.head || '-', row.status || '-'],
   },
   usersRoles: {
     label: 'Users and Roles',
     columns: ['Username', 'Full Name', 'Office', 'Role', 'Status'],
     endpoint: 'usersRoles',
+    idField: 'user_role_id',
     mapRow: (row) => [row.username || '-', row.full_name || '-', row.office_department || '-', row.position_role || '-', row.status || '-'],
   },
 };
@@ -42,7 +45,16 @@ function iconSvg(kind) {
   return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm4.6 13.2-1.4 1.4L7.4 8.8l1.4-1.4Z"/></svg>';
 }
 
-function actionButtons(id) {
+function getRowId(tabId, row) {
+  const fieldName = SYSTEM_CONFIG_DATA[tabId]?.idField;
+  const rawId = row?.id ?? (fieldName ? row?.[fieldName] : null);
+  const numericId = Number(rawId);
+  return Number.isFinite(numericId) ? numericId : null;
+}
+
+function actionButtons(tabId, row) {
+  const id = getRowId(tabId, row);
+  if (!id) return '';
   return `
     <div class="sys-config-actions">
       <button type="button" class="sys-config-action-btn" data-action="view" data-id="${id}" title="View">${iconSvg('view')}</button>
@@ -86,7 +98,7 @@ function renderTable(main, tabId) {
   addNewButton.setAttribute('data-tab', tabId);
   theadRow.innerHTML = [...dataset.columns, 'Actions'].map((column) => `<th scope="col">${column}</th>`).join('');
   tbody.innerHTML = state.rowsByTab[tabId]
-    .map((row) => `<tr>${dataset.mapRow(row).map((value) => `<td>${value}</td>`).join('')}<td>${actionButtons(row.id)}</td></tr>`)
+    .map((row) => `<tr>${dataset.mapRow(row).map((value) => `<td>${value}</td>`).join('')}<td>${actionButtons(tabId, row)}</td></tr>`)
     .join('');
 }
 
@@ -408,18 +420,20 @@ function buildSystemConfigMain() {
   };
 
   const openModalForTab = async (tabId, row = null) => {
-    state.editRowByTab[tabId] = row;
     if (tabId === 'categories') {
       openCategoryModal();
+      state.editRowByTab[tabId] = row;
       if (row) fillForm(tabId, row);
       return;
     }
     if (tabId === 'offices') {
       openOfficeDepartmentModal();
+      state.editRowByTab[tabId] = row;
       if (row) fillForm(tabId, row);
       return;
     }
     await openUsersRolesModal(row?.office_department || '');
+    state.editRowByTab[tabId] = row;
     if (row) fillForm(tabId, row);
   };
 
@@ -446,10 +460,11 @@ function buildSystemConfigMain() {
       const tabId = button.getAttribute('data-save-tab');
       if (!tabId) return;
       const editingRow = state.editRowByTab[tabId];
+      const editingId = getRowId(tabId, editingRow);
       const payload = collectPayload(tabId);
       try {
-        if (editingRow?.id) {
-          await requestJson(`/api/system-config/${tabId}/${editingRow.id}/`, {
+        if (editingId) {
+          await requestJson(`/api/system-config/${tabId}/${editingId}/`, {
             method: 'PUT',
             body: JSON.stringify(payload),
           });
@@ -477,7 +492,7 @@ function buildSystemConfigMain() {
     const action = button.getAttribute('data-action');
     const itemId = Number(button.getAttribute('data-id'));
     const rows = state.rowsByTab[state.activeTab];
-    const row = rows.find((item) => item.id === itemId);
+    const row = rows.find((item) => getRowId(state.activeTab, item) === itemId);
     if (!row) return;
 
     if (action === 'view') {
