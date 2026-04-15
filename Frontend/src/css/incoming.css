@@ -614,6 +614,14 @@ body.incoming-modal-open {
 
 }
 
+.incoming-modal__row--field-spacer {
+
+  min-height: 2.25rem;
+
+  margin: 0;
+
+}
+
 .incoming-modal__label {
 
   color: #243624;

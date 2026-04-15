@@ -235,13 +235,10 @@ function buildIncomingMain(currentUser) {
               <label class="incoming-modal__label" for="incoming-modal-subject">Subject :</label>
               <input class="incoming-modal__input" id="incoming-modal-subject" type="text" readonly />
             </div>
-            <div class="incoming-modal__row incoming-modal__row--textarea">
+            <div class="incoming-modal__row">
               <label class="incoming-modal__label" for="incoming-modal-description">Description :</label>
-              <textarea class="incoming-modal__textarea" id="incoming-modal-description" rows="3" readonly></textarea>
+              <input class="incoming-modal__input" id="incoming-modal-description" type="text" readonly />
             </div>
-          </section>
-
-          <section class="incoming-modal__panel incoming-modal__panel--right" aria-label="Attachments">
             <h3 class="incoming-modal__subhead">ATTACHMENTS</h3>
             <div class="incoming-modal__list-wrap">
               <table class="incoming-modal__list-table">
@@ -253,6 +250,9 @@ function buildIncomingMain(currentUser) {
                 </tbody>
               </table>
             </div>
+          </section>
+
+          <section class="incoming-modal__panel incoming-modal__panel--right" aria-label="Incoming document routing details">
             <div class="incoming-modal__row incoming-modal__row--compact">
               <label class="incoming-modal__label" for="incoming-modal-source">Received From :</label>
               <input class="incoming-modal__input" id="incoming-modal-source" type="text" readonly />
@@ -265,6 +265,18 @@ function buildIncomingMain(currentUser) {
               <label class="incoming-modal__label" for="incoming-modal-forwarded-to-dept">Forwarded Dept. :</label>
               <input class="incoming-modal__input" id="incoming-modal-forwarded-to-dept" type="text" readonly />
             </div>
+            <div class="incoming-modal__row incoming-modal__row--compact">
+              <label class="incoming-modal__label" for="incoming-modal-carrier">Carrier :</label>
+              <input class="incoming-modal__input" id="incoming-modal-carrier" type="text" readonly />
+            </div>
+            <div class="incoming-modal__row incoming-modal__row--compact">
+              <label class="incoming-modal__label" for="incoming-modal-remarks">Remarks from Sender :</label>
+              <input class="incoming-modal__input" id="incoming-modal-remarks" type="text" readonly />
+            </div>
+            <div
+              class="incoming-modal__row incoming-modal__row--compact incoming-modal__row--field-spacer incoming-modal__received-only"
+              aria-hidden="true"
+            ></div>
             <div class="incoming-modal__row incoming-modal__row--compact incoming-modal__received-only" id="incoming-modal-row-received-date">
               <label class="incoming-modal__label" for="incoming-modal-received-date">Received Date :</label>
               <input class="incoming-modal__input" id="incoming-modal-received-date" type="text" readonly />
@@ -272,10 +284,6 @@ function buildIncomingMain(currentUser) {
             <div class="incoming-modal__row incoming-modal__row--compact incoming-modal__received-only" id="incoming-modal-row-received-by">
               <label class="incoming-modal__label" for="incoming-modal-received-by">Received By :</label>
               <input class="incoming-modal__input" id="incoming-modal-received-by" type="text" readonly />
-            </div>
-            <div class="incoming-modal__row incoming-modal__row--compact">
-              <label class="incoming-modal__label" for="incoming-modal-remarks">Remarks from Sender :</label>
-              <input class="incoming-modal__input" id="incoming-modal-remarks" type="text" readonly />
             </div>
           </section>
         </div>
@@ -363,6 +371,7 @@ function buildIncomingMain(currentUser) {
     setModalField('#incoming-modal-remarks', row?.remarks || '');
     setModalField('#incoming-modal-forwarded-to', row?.recipient_name || '');
     setModalField('#incoming-modal-forwarded-to-dept', row?.recipient_department || '');
+    setModalField('#incoming-modal-carrier', row?.carrier || '');
     setModalField('#incoming-modal-received-date', row?.received_date || '');
     setModalField('#incoming-modal-received-by', row?.received_by || '');
     toggleReceivedFields(row);
