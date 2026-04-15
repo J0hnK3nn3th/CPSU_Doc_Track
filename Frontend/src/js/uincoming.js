@@ -4,6 +4,7 @@ import { apiUrl } from './api.js';
 
 const PRIMARY = '#84B179';
 const PRIMARY_LIGHT = '#A2CB8B';
+const TABLE_HEAD_COLOR = PRIMARY;
 
 const ICON_SEARCH =
   '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>';
@@ -32,6 +33,10 @@ function getUserDisplayName(currentUser) {
   const middleInitial = middleName ? `${middleName.charAt(0).toUpperCase()}.` : '';
   const fullName = [firstName, middleInitial, lastName].filter(Boolean).join(' ').trim();
   return fullName || String(currentUser?.username || '').trim();
+}
+
+function getViewButtonStyle() {
+  return `background-color: ${TABLE_HEAD_COLOR}; border-color: ${TABLE_HEAD_COLOR}; color: #fff;`;
 }
 
 function buildRecipientAliases(currentUser) {
@@ -63,7 +68,7 @@ function renderIncomingRows(main, rows, currentUser) {
   if (!rows.length) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="12">No incoming documents found for your account.</td>
+        <td colspan="7">No incoming documents found for your account.</td>
       </tr>
     `;
     return;
@@ -79,14 +84,9 @@ function renderIncomingRows(main, rows, currentUser) {
         <td>${escapeHtmlIncomingCell(isReceivedState(row.document_state) ? (row.received_date || row.date_created || '—') : '—')}</td>
         <td>${escapeHtmlIncomingCell(row.prepared_by || '—')}</td>
         <td>${escapeHtmlIncomingCell(row.category || '—')}</td>
-        <td>${escapeHtmlIncomingCell(row.document_state || '—')}</td>
-        <td>${escapeHtmlIncomingCell(row.date_created || '—')}</td>
-        <td>${escapeHtmlIncomingCell(row.remarks || '—')}</td>
         <td>${escapeHtmlIncomingCell(row.subject || '—')}</td>
-        <td>${escapeHtmlIncomingCell(isReceivedState(row.document_state) ? (row.received_by || receivedBy || '—') : '—')}</td>
-        <td>${escapeHtmlIncomingCell(isReceivedState(row.document_state) ? (row.recipient_name || '—') : '—')}</td>
         <td class="incoming-table__actions">
-          <button type="button" class="incoming-table__view-btn" data-id="${Number(row.id)}" aria-label="View document">View</button>
+          <button type="button" class="incoming-table__view-btn" data-id="${Number(row.id)}" aria-label="View document" style="${getViewButtonStyle()}">View</button>
         </td>
       </tr>
     `,
@@ -193,12 +193,7 @@ function buildIncomingMain(currentUser) {
                 <th scope="col">Received Date</th>
                 <th scope="col">Source</th>
                 <th scope="col">Category</th>
-                <th scope="col">Doc State</th>
-                <th scope="col">Date Created</th>
-                <th scope="col">Remarks from Sender</th>
                 <th scope="col">Subject</th>
-                <th scope="col">Received By</th>
-                <th scope="col">Forwarded To</th>
                 <th scope="col">Actions</th>
               </tr>
             </thead>
@@ -479,8 +474,22 @@ function buildIncomingMain(currentUser) {
     const target = e.target;
     if (!(target instanceof Element)) return;
     const btn = target.closest('.incoming-table__view-btn');
-    if (!btn) return;
-    const id = btn.getAttribute('data-id');
+    if (btn) {
+      const id = btn.getAttribute('data-id');
+      if (!id) return;
+      e.preventDefault();
+      await openViewModal(id);
+      return;
+    }
+    const rowEl = target.closest('.incoming-table__row');
+    if (!(rowEl instanceof HTMLElement)) return;
+    const index = Number(rowEl.getAttribute('data-row-index'));
+    if (!Number.isInteger(index) || index < 0) return;
+    const allRows = Array.isArray(main.__incomingRows) ? main.__incomingRows : [];
+    const filters = main.__incomingFilters || { year: '', state: '', query: '' };
+    const visibleRows = applyIncomingFilters(allRows, filters);
+    const selectedRow = visibleRows[index];
+    const id = selectedRow?.id ? String(selectedRow.id) : '';
     if (!id) return;
     e.preventDefault();
     await openViewModal(id);

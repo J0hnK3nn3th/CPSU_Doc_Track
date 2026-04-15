@@ -464,25 +464,23 @@
 
   font-weight: 600;
 
-  border: 1px solid var(--admin-border);
+  border: 1px solid #84b179;
 
   border-radius: 6px;
 
-  background: #fff;
+  background: #84b179;
 
   cursor: pointer;
 
-  color: var(--admin-text);
+  color: #fff;
 
   font: inherit;
 
 }
 
 .incoming-table__view-btn:hover {
-
-  background: color-mix(in srgb, var(--admin-primary) 12%, #fff);
-
-  border-color: var(--admin-primary);
+  background: color-mix(in srgb, #84b179 88%, #000);
+  border-color: color-mix(in srgb, #84b179 80%, #000);
 
 }
 

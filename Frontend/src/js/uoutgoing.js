@@ -5,6 +5,7 @@ import { notify } from './notifications.js';
 
 const PRIMARY = '#84B179';
 const PRIMARY_LIGHT = '#A2CB8B';
+const TABLE_HEAD_COLOR = PRIMARY;
 
 const SAMPLE_OUTGOING = [];
 
@@ -42,6 +43,10 @@ function getPreparedByFromUser(currentUser) {
   return fullName || String(currentUser?.username || '').trim();
 }
 
+function getViewButtonStyle() {
+  return `background-color: ${TABLE_HEAD_COLOR}; border-color: ${TABLE_HEAD_COLOR}; color: #fff;`;
+}
+
 async function loadOutgoingDocuments(main, currentUser = null) {
   const tbody = main.querySelector('#outgoing-table-tbody');
   if (!tbody) return;
@@ -67,12 +72,11 @@ async function loadOutgoingDocuments(main, currentUser = null) {
         <td>${escapeHtmlOutgoingCell(row.document_code)}</td>
         <td>${escapeHtmlOutgoingCell(row.document_state)}</td>
         <td>${escapeHtmlOutgoingCell(outgoingForwardOffice(row))}</td>
-        <td>${escapeHtmlOutgoingCell(row.date_created)}</td>
         <td>${escapeHtmlOutgoingCell(row.subject)}</td>
         <td>${escapeHtmlOutgoingCell(row.category)}</td>
         <td>${escapeHtmlOutgoingCell(row.prepared_by)}</td>
         <td class="outgoing-table__actions">
-          <button type="button" class="outgoing-table__view-btn" data-id="${Number(row.id)}" aria-label="View document">View</button>
+          <button type="button" class="outgoing-table__view-btn" style="${getViewButtonStyle()}" data-id="${Number(row.id)}" aria-label="View document">View</button>
         </td>
       </tr>
     `,
@@ -142,7 +146,6 @@ function buildOutgoingMain(currentUser = null) {
                 <th scope="col">Document Code</th>
                 <th scope="col">Document State</th>
                 <th scope="col">Office/Department</th>
-                <th scope="col">Date Created</th>
                 <th scope="col">Subject</th>
                 <th scope="col">Category</th>
                 <th scope="col">Prepared by</th>
@@ -317,7 +320,6 @@ function buildOutgoingMain(currentUser = null) {
         <td>${row.docNo}</td>
         <td>${row.docState}</td>
         <td>${row.officeName}</td>
-        <td>${row.dateCreated}</td>
         <td>${row.subject}</td>
         <td>${row.category}</td>
         <td>${row.preparedBy}</td>
@@ -608,12 +610,11 @@ function buildOutgoingMain(currentUser = null) {
         <td>${escapeHtml(row.document_code)}</td>
         <td>${escapeHtml(row.document_state)}</td>
         <td>${escapeHtml(outgoingForwardOffice(row))}</td>
-        <td>${escapeHtml(row.date_created)}</td>
         <td>${escapeHtml(row.subject)}</td>
         <td>${escapeHtml(row.category)}</td>
         <td>${escapeHtml(row.prepared_by)}</td>
         <td class="outgoing-table__actions">
-          <button type="button" class="outgoing-table__view-btn" data-id="${Number(row.id)}" aria-label="View document">View</button>
+          <button type="button" class="outgoing-table__view-btn" style="${getViewButtonStyle()}" data-id="${Number(row.id)}" aria-label="View document">View</button>
         </td>
       `;
     tbody.append(tr);
