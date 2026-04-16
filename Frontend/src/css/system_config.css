@@ -338,6 +338,22 @@ body.sys-config-modal-open {
   color: #243624;
 }
 
+.sys-config-modal__field:has(#office-department-can-mark-complete) {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+#office-department-can-mark-complete {
+  width: auto;
+  margin: 0;
+}
+
+#office-department-can-mark-complete + label {
+  margin: 0;
+}
+
 .sys-config-modal__field input,
 .sys-config-modal__field select,
 .sys-config-modal__field textarea {

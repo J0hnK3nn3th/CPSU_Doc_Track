@@ -57,6 +57,11 @@ function buildRecipientAliases(currentUser) {
 }
 
 function isForwardedToCurrentUser(row, recipientAliases) {
+  const recipientDepartment = normalizeToken(row?.recipient_department);
+  const userDepartment = normalizeToken(row?.__current_user_office_department);
+  if (recipientDepartment && userDepartment) {
+    return recipientDepartment === userDepartment;
+  }
   const recipient = normalizeToken(row?.recipient_name);
   if (!recipient) return false;
   return recipientAliases.has(recipient);
@@ -123,7 +128,10 @@ async function loadIncomingDocuments(main, currentUser) {
     const payload = await res.json();
     const rows = Array.isArray(payload?.rows) ? payload.rows : [];
     const recipientAliases = buildRecipientAliases(currentUser);
-    const incomingForUser = rows.filter((row) => isForwardedToCurrentUser(row, recipientAliases));
+    const incomingForUser = rows.filter((row) => isForwardedToCurrentUser({
+      ...row,
+      __current_user_office_department: currentUser?.office_department || '',
+    }, recipientAliases));
 
     main.__incomingRows = incomingForUser;
     main.__incomingFilters = { year: '', state: '', query: '' };
@@ -163,9 +171,9 @@ function buildIncomingMain(currentUser) {
         <label class="incoming-topbar__field-label" for="incoming-doc-state">Doc State :</label>
         <select class="incoming-topbar__select" id="incoming-doc-state" name="docState">
           <option value="">All</option>
-          <option value="new">NEW</option>
-          <option value="processing">PROCESSING</option>
-          <option value="released">RELEASED</option>
+          <option value="forwarded">FORWARDED</option>
+          <option value="received">RECEIVED</option>
+          <option value="completed">COMPLETED</option>
         </select>
         <div class="incoming-topbar__search-field">
           <input
@@ -829,11 +837,11 @@ function buildIncomingMain(currentUser) {
       flowTbody.innerHTML = `
         <tr>
           <td>${escapeHtmlIncomingCell(date || dash)}</td>
-          <td>${escapeHtmlIncomingCell(forwardedTo || dash)}</td>
+          <td>${escapeHtmlIncomingCell((row?.recipient_department || forwardedTo) || dash)}</td>
           <td>${escapeHtmlIncomingCell(source || dash)}</td>
           <td>${escapeHtmlIncomingCell(status || dash)}</td>
-          <td>${escapeHtmlIncomingCell(row?.received_by || receivedBy || dash)}</td>
-          <td>${escapeHtmlIncomingCell(forwardedTo || dash)}</td>
+          <td>${escapeHtmlIncomingCell((row?.office_name || row?.received_by || receivedBy) || dash)}</td>
+          <td>${escapeHtmlIncomingCell((row?.recipient_department || forwardedTo) || dash)}</td>
           <td>${escapeHtmlIncomingCell(date || dash)}</td>
           <td>${carrierCell}</td>
           <td>${escapeHtmlIncomingCell(remarks || dash)}</td>

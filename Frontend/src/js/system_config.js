@@ -233,6 +233,10 @@ function buildSystemConfigMain() {
             <input id="office-department-head" type="text" autocomplete="off" />
           </div>
           <div class="sys-config-modal__field">
+            <input id="office-department-can-mark-complete" type="checkbox" />
+            <label for="office-department-can-mark-complete">Can mark complete</label>
+          </div>
+          <div class="sys-config-modal__field">
             <label for="office-department-description">Description</label>
             <textarea id="office-department-description" rows="4"></textarea>
           </div>
@@ -404,6 +408,7 @@ function buildSystemConfigMain() {
         name: main.querySelector('#office-department-name')?.value || '',
         head: main.querySelector('#office-department-head')?.value || '',
         description: main.querySelector('#office-department-description')?.value || '',
+        can_mark_complete: main.querySelector('#office-department-can-mark-complete')?.checked || false,
       };
     }
     return {
@@ -430,6 +435,7 @@ function buildSystemConfigMain() {
       main.querySelector('#office-department-name').value = row.name || '';
       main.querySelector('#office-department-head').value = row.head || '';
       main.querySelector('#office-department-description').value = row.description || '';
+      main.querySelector('#office-department-can-mark-complete').checked = Boolean(row.can_mark_complete);
       return;
     }
     main.querySelector('#user-first-name').value = row.first_name || '';

@@ -23,11 +23,18 @@ function escapeHtmlOutgoingCell(value) {
 
 /** Office/department where the document is forwarded (recipient), with legacy fallback. */
 function outgoingForwardOffice(row) {
-  return (row?.recipient_department || row?.office_name || '').trim();
+  return (row?.office_name || '').trim();
 }
 
 function normalizeUserLabel(value) {
   return String(value || '').trim().toLowerCase();
+}
+
+function parseForwarderHistory(value) {
+  return String(value || '')
+    .split('\n')
+    .map((token) => normalizeUserLabel(token))
+    .filter(Boolean);
 }
 
 function isReceivedState(value) {
@@ -60,9 +67,19 @@ async function loadOutgoingDocuments(main, currentUser = null) {
     const usernameKey = normalizeUserLabel(currentUser?.username);
     const visibleRows = rows.filter((row) => {
       const rowPreparedByKey = normalizeUserLabel(row?.prepared_by);
-      return rowPreparedByKey && (
-        rowPreparedByKey === preparedByNameKey ||
-        rowPreparedByKey === usernameKey
+      const rowReceivedByKey = normalizeUserLabel(row?.received_by);
+      const rowForwarders = parseForwarderHistory(row?.forwarder_history);
+      return (
+        (rowPreparedByKey && (
+          rowPreparedByKey === preparedByNameKey ||
+          rowPreparedByKey === usernameKey
+        )) ||
+        (rowReceivedByKey && (
+          rowReceivedByKey === preparedByNameKey ||
+          rowReceivedByKey === usernameKey
+        )) ||
+        rowForwarders.includes(preparedByNameKey) ||
+        rowForwarders.includes(usernameKey)
       );
     });
     tbody.innerHTML = visibleRows
@@ -117,9 +134,9 @@ function buildOutgoingMain(currentUser = null) {
         <label class="outgoing-topbar__field-label" for="outgoing-doc-state">Document State :</label>
         <select class="outgoing-topbar__select" id="outgoing-doc-state" name="docState">
           <option value="">All</option>
-          <option value="new">NEW</option>
-          <option value="processing">PROCESSING</option>
-          <option value="released">RELEASED</option>
+          <option value="forwarded">FORWARDED</option>
+          <option value="received">RECEIVED</option>
+          <option value="completed">COMPLETED</option>
         </select>
         <div class="outgoing-topbar__search-field">
           <input
@@ -177,7 +194,7 @@ function buildOutgoingMain(currentUser = null) {
             </div>
             <div class="outgoing-modal__row">
               <label class="outgoing-modal__label" for="outgoing-modal-doc-state">Document State :</label>
-              <input class="outgoing-modal__input" id="outgoing-modal-doc-state" type="text" value="NEW" />
+              <input class="outgoing-modal__input" id="outgoing-modal-doc-state" type="text" value="FORWARDED" />
             </div>
             <div class="outgoing-modal__row">
               <label class="outgoing-modal__label" for="outgoing-modal-doc-no">Document Code :</label>
@@ -770,7 +787,7 @@ function buildOutgoingMain(currentUser = null) {
   const resetNewDocumentForm = () => {
     if (modalDateCreated instanceof HTMLInputElement) modalDateCreated.value = getCurrentDate();
     const docState = main.querySelector('#outgoing-modal-doc-state');
-    if (docState instanceof HTMLInputElement) docState.value = 'NEW';
+    if (docState instanceof HTMLInputElement) docState.value = 'FORWARDED';
     if (modalDocCodeInput instanceof HTMLInputElement) modalDocCodeInput.value = '';
     if (modalDocCategoryInput instanceof HTMLInputElement) modalDocCategoryInput.value = '';
     const subjectEl = main.querySelector('#outgoing-modal-subject');
@@ -825,7 +842,7 @@ function buildOutgoingMain(currentUser = null) {
     }
     const payload = {
       document_code,
-      document_state: main.querySelector('#outgoing-modal-doc-state')?.value?.trim() || 'NEW',
+      document_state: main.querySelector('#outgoing-modal-doc-state')?.value?.trim() || 'FORWARDED',
       category: main.querySelector('#outgoing-modal-category')?.value?.trim() || '',
       subject,
       description: main.querySelector('#outgoing-modal-description')?.value?.trim() || '',

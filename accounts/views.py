@@ -21,6 +21,7 @@ _TRUSTED_LOGIN_PREFIXES = (
     'http://127.0.0.1:8000/',
 )
 _TRUSTED_LOGIN_ORIGINS = {p.rstrip('/') for p in _TRUSTED_LOGIN_PREFIXES}
+ALLOWED_DOCUMENT_STATES = {'FORWARDED', 'RECEIVED', 'COMPLETED'}
 
 
 def _origin_from_url(value):
@@ -213,6 +214,7 @@ def _serialize_item(tab_name, obj):
             'code': obj.code,
             'name': obj.name,
             'head': obj.head,
+            'can_mark_complete': obj.can_mark_complete,
             'status': 'Active' if obj.is_active else 'Disabled',
         }
     return {
@@ -242,6 +244,7 @@ def _apply_payload(tab_name, obj, payload, *, is_update=False):
         obj.name = (payload.get('name') or '').strip()
         obj.head = (payload.get('head') or '').strip()
         obj.description = (payload.get('description') or '').strip()
+        obj.can_mark_complete = bool(payload.get('can_mark_complete'))
         return obj.code and obj.name
     obj.first_name = (payload.get('first_name') or '').strip()
     obj.last_name = (payload.get('last_name') or '').strip()
@@ -379,6 +382,7 @@ def _serialize_outgoing_document(obj):
         'recipient_department': obj.recipient_department or '',
         'carrier': obj.carrier or '',
         'remarks': obj.remarks or '',
+        'forwarder_history': obj.forwarder_history or '',
         'description': obj.description or '',
         'received_by': obj.received_by or '',
         'received_date': obj.received_at.strftime('%b %d, %Y') if obj.received_at else '',
@@ -387,6 +391,29 @@ def _serialize_outgoing_document(obj):
 
 def _normalize_token(value):
     return str(value or '').strip().lower()
+
+
+def _normalize_document_state(value, default='FORWARDED'):
+    state = str(value or '').strip().upper() or default
+    if state not in ALLOWED_DOCUMENT_STATES:
+        return None
+    return state
+
+
+def _append_forwarder_history(existing, *tokens):
+    existing_tokens = [t.strip() for t in str(existing or '').split('\n') if t.strip()]
+    normalized_existing = {_normalize_token(t) for t in existing_tokens}
+    merged = list(existing_tokens)
+    for token in tokens:
+        clean = str(token or '').strip()
+        if not clean:
+            continue
+        normalized = _normalize_token(clean)
+        if normalized in normalized_existing:
+            continue
+        merged.append(clean)
+        normalized_existing.add(normalized)
+    return '\n'.join(merged)
 
 
 def _user_display_name(request):
@@ -409,7 +436,21 @@ def _user_can_forward_outgoing(request, obj):
     return _recipient_matches_authenticated_user(request, obj)
 
 
+def _current_user_office_department(request):
+    role_user = UserRoleConfig.objects.filter(
+        username__iexact=request.user.username,
+        is_active=True,
+    ).first()
+    return ((role_user.office_department if role_user else '') or '').strip()
+
+
 def _recipient_matches_authenticated_user(request, obj):
+    recipient_department = _normalize_token(obj.recipient_department)
+    if recipient_department:
+        user_department = _normalize_token(_current_user_office_department(request))
+        if user_department and recipient_department == user_department:
+            return True
+
     recipient = _normalize_token(obj.recipient_name)
     if not recipient:
         return False
@@ -455,9 +496,16 @@ def outgoing_documents_collection(request):
             status=400,
         )
 
+    state = _normalize_document_state(payload.get('document_state'), default='FORWARDED')
+    if state is None:
+        return JsonResponse(
+            {'error': 'Document state must be FORWARDED, RECEIVED, or COMPLETED.'},
+            status=400,
+        )
+
     obj = OutgoingDocument(
         document_code=document_code,
-        document_state=(payload.get('document_state') or 'NEW').strip() or 'NEW',
+        document_state=state,
         category=(payload.get('category') or '').strip(),
         subject=subject,
         description=(payload.get('description') or '').strip(),
@@ -503,26 +551,35 @@ def outgoing_document_detail(request, pk):
             new_recipient = (payload.get('recipient_name') or '').strip()
             if not new_recipient:
                 return JsonResponse({'error': 'Recipient name is required.'}, status=400)
-            obj.prepared_by = _user_display_name(request)
             obj.recipient_name = new_recipient
             obj.recipient_department = (payload.get('recipient_department') or '').strip()
             obj.carrier = (payload.get('carrier') or '').strip()
-            obj.document_state = 'NEW'
-            obj.received_by = ''
-            obj.received_at = None
+            obj.forwarder_history = _append_forwarder_history(
+                obj.forwarder_history,
+                _user_display_name(request),
+                request.user.username,
+            )
+            obj.document_state = 'FORWARDED'
             obj.save()
             return JsonResponse({'row': _serialize_outgoing_document(obj)})
 
         new_state = (payload.get('document_state') or '').strip().upper()
-        if new_state != 'RECEIVED':
-            return JsonResponse({'error': 'Only RECEIVED state update is allowed.'}, status=400)
+        if new_state not in {'RECEIVED', 'COMPLETED'}:
+            return JsonResponse(
+                {'error': 'Only RECEIVED or COMPLETED state update is allowed.'},
+                status=400,
+            )
         if not _recipient_matches_authenticated_user(request, obj):
             return JsonResponse({'error': 'Only the intended receiver can receive this document.'}, status=403)
 
-        obj.document_state = 'RECEIVED'
-        obj.received_by = _user_display_name(request)
-        obj.received_at = timezone.now()
-        obj.save(update_fields=['document_state', 'received_by', 'received_at', 'updated_at'])
+        obj.document_state = new_state
+        if new_state == 'RECEIVED':
+            obj.received_by = _user_display_name(request)
+            obj.office_name = _current_user_office_department(request)
+            obj.received_at = timezone.now()
+            obj.save(update_fields=['document_state', 'received_by', 'office_name', 'received_at', 'updated_at'])
+        else:
+            obj.save(update_fields=['document_state', 'updated_at'])
         return JsonResponse({'row': _serialize_outgoing_document(obj)})
 
     return JsonResponse({'row': _serialize_outgoing_document(obj)})
