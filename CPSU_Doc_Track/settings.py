@@ -103,7 +103,7 @@ WSGI_APPLICATION = 'CPSU_Doc_Track.wsgi.application'
 # }
 DATABASES = {
      'default': dj_database_url.config(
-         default='postgresql://doc_track_db_yjbg_user:GJUiAwWaLUpTkitpAkJXzYqsIfX2mMsc@dpg-d7g5p8q8qa3s73djfgc0-a.oregon-postgres.render.com/doc_track_db_yjbg',
+         default='postgresql://doctrack_db_user:hletUAKVliDznz5bp4to3GKZXKStDXpT@dpg-d7gdkk8sfn5c73a3tong-a.oregon-postgres.render.com/doctrack_db',
          conn_max_age=600,
        ssl_require=True
     )
