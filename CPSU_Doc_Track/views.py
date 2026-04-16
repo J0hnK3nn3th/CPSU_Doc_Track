@@ -4,12 +4,16 @@ from django.http import Http404
 from django.shortcuts import render
 from django.views.static import serve
 
-FRONTEND_DIST_DIR = Path(__file__).resolve().parent.parent / 'Frontend' / 'dist'
+FRONTEND_DIR = Path(__file__).resolve().parent.parent / 'Frontend'
+FRONTEND_SRC_DIR = FRONTEND_DIR / 'src'
 ALLOWED_PAGES = {
     'admin',
+    'cuser',
     'incoming',
     'outgoing',
     'system_config',
+    'ucincoming',
+    'ucoutgoing',
     'user',
     'uincoming',
     'uoutgoing',
@@ -27,4 +31,4 @@ def frontend_page(request, page):
 
 
 def frontend_src_asset(request, path):
-    return serve(request, path, document_root=str(FRONTEND_DIST_DIR / 'src'))
+    return serve(request, path, document_root=str(FRONTEND_SRC_DIR))
