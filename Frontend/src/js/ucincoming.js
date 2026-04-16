@@ -1,5 +1,5 @@
 import { createHeader } from '../header, footer, sidebar/uheader.js';
-import { createSidebar } from '../header, footer, sidebar/usidebar.js';
+import { createSidebar } from '../header, footer, sidebar/ucsidebar.js';
 import { apiUrl } from './api.js';
 import { notify } from './notifications.js';
 
@@ -32,6 +32,10 @@ function isTruthyFlag(value) {
 function isReceivedState(value) {
   const state = normalizeToken(value);
   return state === 'received' || state === 'completed';
+}
+
+function isCompletedState(value) {
+  return normalizeToken(value) === 'completed';
 }
 
 function getUserDisplayName(currentUser) {
@@ -135,10 +139,13 @@ async function loadIncomingDocuments(main, currentUser) {
     const payload = await res.json();
     const rows = Array.isArray(payload?.rows) ? payload.rows : [];
     const recipientAliases = buildRecipientAliases(currentUser);
-    const incomingForUser = rows.filter((row) => isForwardedToCurrentUser({
-      ...row,
-      __current_user_office_department: currentUser?.office_department || '',
-    }, recipientAliases));
+    const incomingForUser = rows.filter((row) => {
+      if (isCompletedState(row?.document_state)) return false;
+      return isForwardedToCurrentUser({
+        ...row,
+        __current_user_office_department: currentUser?.office_department || '',
+      }, recipientAliases);
+    });
 
     main.__incomingRows = incomingForUser;
     main.__incomingFilters = { year: '', state: '', query: '' };
@@ -1107,7 +1114,7 @@ async function mountIncoming(root = document.querySelector('#app')) {
     activeId: 'incoming',
     onSelect: () => closeSidebar(),
     isAdmin: false,
-    dashboardHref: 'user.html',
+    dashboardHref: 'cuser.html',
   });
 
   const shell = document.createElement('div');

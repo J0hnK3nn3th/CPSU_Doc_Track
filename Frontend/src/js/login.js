@@ -11,6 +11,69 @@ function getCookie(name) {
   return match ? decodeURIComponent(match[1]) : '';
 }
 
+function normalizeToken(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, ' ');
+}
+
+function isTruthyFlag(value) {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'number') return value !== 0;
+  const token = String(value || '')
+    .trim()
+    .toLowerCase();
+  return token === '1' || token === 'true' || token === 'yes' || token === 'y';
+}
+
+async function resolveUserDepartment(payload) {
+  const fromPayload = payload?.user?.office_department || payload?.office_department || '';
+  if (fromPayload) return String(fromPayload).trim();
+
+  try {
+    const meRes = await fetch(apiUrl('/api/auth/me/'), { credentials: 'include' });
+    if (!meRes.ok) return '';
+    const mePayload = await meRes.json().catch(() => ({}));
+    return String(mePayload?.user?.office_department || mePayload?.office_department || '').trim();
+  } catch {
+    return '';
+  }
+}
+
+async function departmentCanMarkComplete(department) {
+  const deptKey = normalizeToken(department);
+  if (!deptKey) return false;
+
+  try {
+    const res = await fetch(apiUrl('/api/system-config/offices/'), { credentials: 'include' });
+    if (!res.ok) return false;
+    const payload = await res.json().catch(() => ({}));
+    const rows = Array.isArray(payload?.rows) ? payload.rows : [];
+    return rows.some((row) => {
+      const officeKey = normalizeToken(row?.name || row?.office_department || '');
+      return officeKey === deptKey && isTruthyFlag(row?.can_mark_complete);
+    });
+  } catch {
+    return false;
+  }
+}
+
+async function resolveLoginRedirect(payload) {
+  const fallbackTarget =
+    typeof payload?.redirect === 'string' && payload.redirect
+      ? payload.redirect
+      : '/admin.html';
+
+  if (!/\/?user\.html$/i.test(fallbackTarget)) return fallbackTarget;
+
+  const department = await resolveUserDepartment(payload);
+  if (!department) return fallbackTarget;
+
+  const canMarkComplete = await departmentCanMarkComplete(department);
+  return canMarkComplete ? '/cuser.html' : fallbackTarget;
+}
+
 async function ensureCsrf() {
   await fetch(apiUrl('/api/auth/csrf/'), { credentials: 'include' });
 }
@@ -126,10 +189,7 @@ function mountLogin(root = document.querySelector('#app')) {
         return;
       }
 
-      const target =
-        typeof payload.redirect === 'string' && payload.redirect
-          ? payload.redirect
-          : '/admin.html';
+      const target = await resolveLoginRedirect(payload);
       await notify({
         icon: 'success',
         title: 'Login successful',

@@ -1,0 +1,42 @@
+.user-main {
+  max-width: 72rem;
+}
+
+.user-main__head {
+  margin-bottom: 1rem;
+}
+
+.user-main__title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.user-main__subtitle {
+  margin: 0.3rem 0 0;
+  color: #5c5c5c;
+}
+
+.user-main__panel {
+  max-width: 32rem;
+}
+
+.user-main__body {
+  padding: 1rem;
+  display: flex;
+  gap: 0.75rem;
+}
+
+.user-main__link {
+  text-decoration: none;
+  padding: 0.55rem 0.8rem;
+  border: 1px solid #d8dce5;
+  border-radius: 8px;
+  color: #2a3a2f;
+  font-weight: 600;
+  background: #fff;
+}
+
+.user-main__link:hover {
+  background: #f4f8f2;
+}
