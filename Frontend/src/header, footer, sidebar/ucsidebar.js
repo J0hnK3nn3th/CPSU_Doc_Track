@@ -66,7 +66,13 @@ export function createSidebar({ activeId = 'dashboard', onSelect, isAdmin = true
     : ['dashboard', 'incoming', 'outgoing'];
   const items = NAV_ITEMS
     .filter((item) => visibleIds.includes(item.id))
-    .map((item) => (item.id === 'dashboard' ? { ...item, href: dashboardHref } : item));
+    .map((item) => {
+      // Force navigation to only the allowed user pages.
+      if (item.id === 'dashboard') return { ...item, href: 'cuser.html' };
+      if (item.id === 'incoming') return { ...item, href: 'ucincoming.html' };
+      if (item.id === 'outgoing') return { ...item, href: 'ucoutgoing.html' };
+      return item;
+    });
 
   const aside = document.createElement('aside');
   aside.className = 'admin-sidebar';

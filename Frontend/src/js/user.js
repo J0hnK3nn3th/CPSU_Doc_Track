@@ -30,8 +30,8 @@ function buildUserMain() {
         <h2 class="admin-panel__title">Quick Access</h2>
       </div>
       <div class="admin-panel__body user-main__body">
-        <a class="user-main__link" href="incoming.html">Go to Incoming</a>
-        <a class="user-main__link" href="outgoing.html">Go to Outgoing</a>
+        <a class="user-main__link" href="uincoming.html">Go to Incoming</a>
+        <a class="user-main__link" href="uoutgoing.html">Go to Outgoing</a>
       </div>
     </section>
   `;
