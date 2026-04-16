@@ -48,6 +48,13 @@ class UserRoleConfig(models.Model):
 
 
 class OutgoingDocument(models.Model):
+    control_number = models.CharField(
+        max_length=9,
+        unique=True,
+        null=True,
+        blank=True,
+        help_text='Format: four digits, hyphen, four digits (e.g. 8656-8664).',
+    )
     document_code = models.CharField(max_length=100)
     document_state = models.CharField(max_length=50, default='NEW')
     category = models.CharField(max_length=200, blank=True)
@@ -56,6 +63,7 @@ class OutgoingDocument(models.Model):
     prepared_by = models.CharField(max_length=300, blank=True)
     recipient_name = models.CharField(max_length=300, blank=True)
     recipient_department = models.CharField(max_length=200, blank=True)
+    carrier = models.CharField(max_length=200, blank=True)
     remarks = models.TextField(blank=True)
     office_name = models.CharField(max_length=200, blank=True)
     received_by = models.CharField(max_length=300, blank=True)

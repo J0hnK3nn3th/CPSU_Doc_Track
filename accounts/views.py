@@ -1,4 +1,5 @@
 import json
+import secrets
 from urllib.parse import urlsplit
 
 from django.conf import settings
@@ -349,9 +350,24 @@ def system_config_enable(request, tab_name, item_id):
     return JsonResponse({'row': _serialize_item(tab_name, obj)})
 
 
+def _generate_outgoing_control_number():
+    """Eight random digits as ####-#### (e.g. 8656-8664)."""
+    return f'{secrets.randbelow(10000):04d}-{secrets.randbelow(10000):04d}'
+
+
+def _assign_unique_control_number(obj):
+    for _ in range(64):
+        candidate = _generate_outgoing_control_number()
+        if not OutgoingDocument.objects.filter(control_number=candidate).exists():
+            obj.control_number = candidate
+            return
+    raise RuntimeError('Could not assign a unique control number.')
+
+
 def _serialize_outgoing_document(obj):
     return {
         'id': obj.id,
+        'control_number': obj.control_number or '',
         'document_code': obj.document_code,
         'document_state': obj.document_state,
         'office_name': obj.office_name or '',
@@ -361,6 +377,7 @@ def _serialize_outgoing_document(obj):
         'prepared_by': obj.prepared_by,
         'recipient_name': obj.recipient_name or '',
         'recipient_department': obj.recipient_department or '',
+        'carrier': obj.carrier or '',
         'remarks': obj.remarks or '',
         'description': obj.description or '',
         'received_by': obj.received_by or '',
@@ -383,6 +400,13 @@ def _user_display_name(request):
     middle_initial = f'{middle_name[:1].upper()}.' if middle_name else ''
     display_name = ' '.join(p for p in [first_name, middle_initial, last_name] if p).strip()
     return display_name or request.user.username
+
+
+def _user_can_forward_outgoing(request, obj):
+    """Recipient must have received the document before they can forward it."""
+    if _normalize_token(obj.document_state) != 'received':
+        return False
+    return _recipient_matches_authenticated_user(request, obj)
 
 
 def _recipient_matches_authenticated_user(request, obj):
@@ -440,11 +464,14 @@ def outgoing_documents_collection(request):
         prepared_by=(payload.get('prepared_by') or '').strip(),
         recipient_name=(payload.get('recipient_name') or '').strip(),
         recipient_department=(payload.get('recipient_department') or '').strip(),
+        carrier=(payload.get('carrier') or '').strip(),
         remarks=(payload.get('remarks') or '').strip(),
         office_name=(payload.get('office_name') or '').strip(),
     )
     if request.user.is_authenticated:
         obj.created_by = request.user
+
+    _assign_unique_control_number(obj)
 
     try:
         obj.save()
@@ -466,6 +493,26 @@ def outgoing_document_detail(request, pk):
         payload = _parse_json(request)
         if payload is None:
             return JsonResponse({'error': 'Invalid JSON.'}, status=400)
+        action = (payload.get('action') or '').strip().lower()
+        if action == 'forward':
+            if not _user_can_forward_outgoing(request, obj):
+                return JsonResponse(
+                    {'error': 'Only the recipient who received this document can forward it.'},
+                    status=403,
+                )
+            new_recipient = (payload.get('recipient_name') or '').strip()
+            if not new_recipient:
+                return JsonResponse({'error': 'Recipient name is required.'}, status=400)
+            obj.prepared_by = _user_display_name(request)
+            obj.recipient_name = new_recipient
+            obj.recipient_department = (payload.get('recipient_department') or '').strip()
+            obj.carrier = (payload.get('carrier') or '').strip()
+            obj.document_state = 'NEW'
+            obj.received_by = ''
+            obj.received_at = None
+            obj.save()
+            return JsonResponse({'row': _serialize_outgoing_document(obj)})
+
         new_state = (payload.get('document_state') or '').strip().upper()
         if new_state != 'RECEIVED':
             return JsonResponse({'error': 'Only RECEIVED state update is allowed.'}, status=400)

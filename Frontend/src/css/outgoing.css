@@ -345,6 +345,39 @@ body.outgoing-modal-open {
   letter-spacing: 0.01em;
 }
 
+.outgoing-modal__title--row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem 1.25rem;
+}
+
+.outgoing-modal__title-main {
+  flex: 0 1 auto;
+}
+
+.outgoing-modal__control-inline {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #2d3f2c;
+}
+
+.outgoing-modal__control-label {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.outgoing-modal__control-value {
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  min-width: 5.5ch;
+}
+
 .outgoing-modal__content {
   display: grid;
   grid-template-columns: minmax(540px, 1fr) minmax(320px, 0.9fr);

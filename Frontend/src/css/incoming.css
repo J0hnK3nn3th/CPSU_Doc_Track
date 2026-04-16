@@ -566,6 +566,39 @@ body.incoming-modal-open {
 
 }
 
+.incoming-modal__title--row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem 1.25rem;
+}
+
+.incoming-modal__title-main {
+  flex: 0 1 auto;
+}
+
+.incoming-modal__control-inline {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #2d3f2c;
+}
+
+.incoming-modal__control-label {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.incoming-modal__control-value {
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  min-width: 5.5ch;
+}
+
 .incoming-modal__content {
   display: grid;
   grid-template-columns: minmax(540px, 1fr) minmax(320px, 0.9fr);
@@ -854,6 +887,35 @@ body.incoming-modal-open {
 
   }
 
+}
+
+/* Forward modal (outgoing-style): editable routing fields stay white, not read-only gray */
+#incoming-forward-modal.outgoing-modal--view .outgoing-modal__input--editable {
+  background: #fff;
+  cursor: text;
+  color: var(--admin-text);
+}
+
+#incoming-forward-modal.outgoing-modal--view .outgoing-modal__input--editable:focus-visible {
+  outline: 2px solid var(--admin-primary);
+  outline-offset: 1px;
+}
+
+#incoming-forward-modal .incoming-fwd-modal__cancel {
+  background: #fff;
+  color: var(--admin-text);
+  border-color: var(--admin-border);
+}
+
+#incoming-forward-modal .incoming-fwd-modal__cancel:hover {
+  background: color-mix(in srgb, var(--admin-muted) 10%, #fff);
+  border-color: color-mix(in srgb, var(--admin-muted) 35%, var(--admin-border));
+  box-shadow: 0 4px 10px rgb(0 0 0 / 8%);
+}
+
+#incoming-forward-modal .incoming-fwd-modal__cancel:focus-visible {
+  outline: 2px solid var(--admin-primary);
+  outline-offset: 2px;
 }
 
 

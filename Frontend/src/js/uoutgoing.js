@@ -158,10 +158,16 @@ function buildOutgoingMain(currentUser = null) {
       </div>
     </section>
 
-    <div class="outgoing-modal" id="outgoing-new-doc-modal" role="dialog" aria-modal="true" aria-labelledby="outgoing-modal-title" hidden>
+    <div class="outgoing-modal" id="outgoing-new-doc-modal" role="dialog" aria-modal="true" aria-labelledby="outgoing-modal-title-main" hidden>
       <div class="outgoing-modal__backdrop" data-modal-close="true"></div>
       <div class="outgoing-modal__dialog">
-        <h2 class="outgoing-modal__title" id="outgoing-modal-title">OUTGOING DOCUMENT</h2>
+        <h2 class="outgoing-modal__title outgoing-modal__title--row">
+          <span class="outgoing-modal__title-main" id="outgoing-modal-title-main">OUTGOING DOCUMENT</span>
+          <span class="outgoing-modal__control-inline">
+            <span class="outgoing-modal__control-label">Control Number. :</span>
+            <span class="outgoing-modal__control-value" id="outgoing-modal-control-number" aria-live="polite"></span>
+          </span>
+        </h2>
 
         <div class="outgoing-modal__content">
           <section class="outgoing-modal__panel outgoing-modal__panel--left" aria-label="Document details">
@@ -356,7 +362,8 @@ function buildOutgoingMain(currentUser = null) {
   const modalReceivedDateInput = main.querySelector('#outgoing-modal-received-date');
   const modalReceivedByInput = main.querySelector('#outgoing-modal-received-by');
   const modalRecipientSuggestions = main.querySelector('#outgoing-recipient-suggestions');
-  const modalTitle = main.querySelector('#outgoing-modal-title');
+  const modalTitleMain = main.querySelector('#outgoing-modal-title-main');
+  const modalControlNumber = main.querySelector('#outgoing-modal-control-number');
   const saveBtn = main.querySelector('#outgoing-modal-save-btn');
   const barcodeBtn = main.querySelector('#outgoing-modal-barcode-btn');
   const categoryByCode = new Map();
@@ -641,7 +648,8 @@ function buildOutgoingMain(currentUser = null) {
     const fwdRaw = (row.recipient_department || '').trim() || (row.recipient_name || '').trim();
     const forwardedTo = fwdRaw ? escapeHtml(fwdRaw) : dash;
     const forwardDate = date;
-    const carrier = dash;
+    const carrierRaw = (row.carrier || '').trim();
+    const carrier = carrierRaw ? escapeHtml(carrierRaw) : dash;
     const remarks = (row.remarks || '').trim() ? escapeHtml(row.remarks) : dash;
     flowTbody.innerHTML = `
       <tr>
@@ -658,10 +666,16 @@ function buildOutgoingMain(currentUser = null) {
     `;
   };
 
+  const setControlNumberDisplay = (value) => {
+    if (!(modalControlNumber instanceof HTMLElement)) return;
+    const v = String(value ?? '').trim();
+    modalControlNumber.textContent = v;
+  };
+
   const setModalViewMode = (isView) => {
     if (!modal) return;
     modal.classList.toggle('outgoing-modal--view', isView);
-    if (modalTitle) modalTitle.textContent = isView ? 'VIEW OUTGOING DOCUMENT' : 'OUTGOING DOCUMENT';
+    if (modalTitleMain) modalTitleMain.textContent = isView ? 'VIEW OUTGOING DOCUMENT' : 'OUTGOING DOCUMENT';
     [saveBtn, barcodeBtn].forEach((btn) => {
       if (!(btn instanceof HTMLElement)) return;
       btn.hidden = isView;
@@ -674,6 +688,7 @@ function buildOutgoingMain(currentUser = null) {
     const descriptionEl = main.querySelector('#outgoing-modal-description');
     const preparedByEl = main.querySelector('#outgoing-modal-prepared-by');
     const remarksEl = main.querySelector('#outgoing-modal-remarks');
+    const carrierEl = main.querySelector('#outgoing-modal-carrier');
     const editable = [
       docState,
       modalDocCodeInput,
@@ -682,6 +697,7 @@ function buildOutgoingMain(currentUser = null) {
       descriptionEl,
       preparedByEl,
       modalRecipientInput,
+      carrierEl,
       remarksEl,
     ];
     editable.forEach((el) => {
@@ -719,9 +735,12 @@ function buildOutgoingMain(currentUser = null) {
       modalRecipientDeptInput.value = row.recipient_department || '';
     }
     setReceivedMetaFields(row);
+    const carrierField = main.querySelector('#outgoing-modal-carrier');
+    if (carrierField instanceof HTMLInputElement) carrierField.value = row.carrier || '';
     const remarksEl = main.querySelector('#outgoing-modal-remarks');
     if (remarksEl instanceof HTMLInputElement) remarksEl.value = row.remarks || '';
     renderModalDocumentFlow(row);
+    setControlNumberDisplay(row.control_number);
   };
 
   const openViewModal = async (id) => {
@@ -764,10 +783,13 @@ function buildOutgoingMain(currentUser = null) {
     if (modalRecipientInput instanceof HTMLInputElement) modalRecipientInput.value = '';
     if (modalRecipientDeptInput instanceof HTMLInputElement) modalRecipientDeptInput.value = '';
     setReceivedMetaFields(null);
+    const carrierField = main.querySelector('#outgoing-modal-carrier');
+    if (carrierField instanceof HTMLInputElement) carrierField.value = '';
     const remarksEl = main.querySelector('#outgoing-modal-remarks');
     if (remarksEl instanceof HTMLInputElement) remarksEl.value = '';
     renderCodeSuggestions([]);
     clearModalDocumentFlow();
+    setControlNumberDisplay('');
     setModalViewMode(false);
   };
 
@@ -810,6 +832,7 @@ function buildOutgoingMain(currentUser = null) {
       prepared_by: main.querySelector('#outgoing-modal-prepared-by')?.value?.trim() || '',
       recipient_name: main.querySelector('#outgoing-modal-recipient')?.value?.trim() || '',
       recipient_department: main.querySelector('#outgoing-modal-recipient-dept')?.value?.trim() || '',
+      carrier: main.querySelector('#outgoing-modal-carrier')?.value?.trim() || '',
       remarks: main.querySelector('#outgoing-modal-remarks')?.value?.trim() || '',
     };
     try {
@@ -825,6 +848,7 @@ function buildOutgoingMain(currentUser = null) {
         appendOutgoingTableRow(data.row);
         setReceivedMetaFields(data.row);
         renderModalDocumentFlow(data.row);
+        setControlNumberDisplay(data.row.control_number);
       }
       await notify({
         icon: 'success',
