@@ -38,7 +38,8 @@ function parseForwarderHistory(value) {
 }
 
 function isReceivedState(value) {
-  return String(value || '').trim().toLowerCase() === 'received';
+  const state = String(value || '').trim().toLowerCase();
+  return state === 'received' || state === 'completed';
 }
 
 function getPreparedByFromUser(currentUser) {
@@ -69,18 +70,31 @@ async function loadOutgoingDocuments(main, currentUser = null) {
       const rowPreparedByKey = normalizeUserLabel(row?.prepared_by);
       const rowReceivedByKey = normalizeUserLabel(row?.received_by);
       const rowForwarders = parseForwarderHistory(row?.forwarder_history);
-      return (
-        (rowPreparedByKey && (
-          rowPreparedByKey === preparedByNameKey ||
-          rowPreparedByKey === usernameKey
-        )) ||
-        (rowReceivedByKey && (
-          rowReceivedByKey === preparedByNameKey ||
-          rowReceivedByKey === usernameKey
-        )) ||
-        rowForwarders.includes(preparedByNameKey) ||
-        rowForwarders.includes(usernameKey)
-      );
+      const isSender =
+        rowPreparedByKey &&
+        (rowPreparedByKey === preparedByNameKey || rowPreparedByKey === usernameKey);
+      const isForwarder =
+        rowForwarders.includes(preparedByNameKey) || rowForwarders.includes(usernameKey);
+
+      // Important rule:
+      // - A RECEIVED document should NOT appear in the receiver's Outgoing page
+      //   unless it has been forwarded onward (i.e., state is no longer RECEIVED).
+      const stateKey = String(row?.document_state || '').trim().toLowerCase();
+      const isReceivedOnly = stateKey === 'received';
+
+      const isReceiver =
+        rowReceivedByKey &&
+        (rowReceivedByKey === preparedByNameKey || rowReceivedByKey === usernameKey);
+
+      // RECEIVED state should not appear in Outgoing for the receiver/current user
+      // (or any non-sender). Only the sender should see it as status feedback.
+      if (isReceivedOnly) {
+        return Boolean(isSender) && !isReceiver;
+      }
+
+      if (isSender) return true;
+      if (!isForwarder) return false;
+      return !isReceivedOnly;
     });
     tbody.innerHTML = visibleRows
       .map(
@@ -317,7 +331,7 @@ function buildOutgoingMain(currentUser = null) {
 
         <div class="outgoing-modal__footer">
           <button type="button" class="outgoing-modal__tool-btn" id="outgoing-modal-save-btn">
-            SAVE
+            FORWARD
           </button>
           <button type="button" class="outgoing-modal__tool-btn" id="outgoing-modal-barcode-btn">
             BARCODE
@@ -583,8 +597,13 @@ function buildOutgoingMain(currentUser = null) {
   };
 
   const setReceivedMetaFields = (row) => {
-    const receivedDate = isReceivedState(row?.document_state) ? (row?.received_date || '') : '';
-    const receivedBy = isReceivedState(row?.document_state) ? (row?.received_by || '') : '';
+    const dash = '—';
+    const receivedDate = isReceivedState(row?.document_state)
+      ? (String(row?.received_date || '').trim() || dash)
+      : '';
+    const receivedBy = isReceivedState(row?.document_state)
+      ? (String(row?.received_by || '').trim() || dash)
+      : '';
     if (modalReceivedDateInput instanceof HTMLInputElement) modalReceivedDateInput.value = receivedDate;
     if (modalReceivedByInput instanceof HTMLInputElement) modalReceivedByInput.value = receivedBy;
   };
@@ -869,9 +888,10 @@ function buildOutgoingMain(currentUser = null) {
       }
       await notify({
         icon: 'success',
-        title: 'Saved',
-        text: 'Outgoing document saved successfully.',
+        title: 'Forwarded',
+        text: 'Outgoing document forwarded successfully.',
       });
+      closeModal();
     } catch (err) {
       await notify({
         icon: 'error',

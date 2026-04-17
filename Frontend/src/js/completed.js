@@ -588,8 +588,21 @@ function buildOutgoingMain(currentUser = null) {
   };
 
   const setReceivedMetaFields = (row) => {
-    const receivedDate = isReceivedState(row?.document_state) ? (row?.received_date || '') : '';
-    const receivedBy = isReceivedState(row?.document_state) ? (row?.received_by || '') : '';
+    const receivedDate = String(
+      row?.received_date ||
+      row?.receive_date ||
+      row?.recieve_date ||
+      row?.date_received ||
+      row?.date_created ||
+      ''
+    ).trim();
+    const receivedBy = String(
+      row?.received_by ||
+      row?.receive_by ||
+      row?.recieve_by ||
+      row?.office_name ||
+      ''
+    ).trim();
     if (modalReceivedDateInput instanceof HTMLInputElement) modalReceivedDateInput.value = receivedDate;
     if (modalReceivedByInput instanceof HTMLInputElement) modalReceivedByInput.value = receivedBy;
   };

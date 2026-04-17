@@ -1023,7 +1023,9 @@ function buildIncomingMain(currentUser) {
     if (!(target instanceof Element)) return;
     if (target.closest('[data-modal-close="true"]')) closeModal();
   });
-  receiveBtn?.addEventListener('click', () => {
+  receiveBtn?.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
     if (receiveBtn instanceof HTMLButtonElement && receiveBtn.dataset.action === 'forward') {
       openForwardModal();
       return;

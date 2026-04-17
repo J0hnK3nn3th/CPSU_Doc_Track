@@ -712,8 +712,17 @@ function buildIncomingMain(currentUser) {
     setForwardField('#incoming-fwd-modal-recipient-dept', '');
     setForwardField('#incoming-fwd-modal-carrier', '');
     setForwardField('#incoming-fwd-modal-remarks', row?.remarks || '');
-    setForwardField('#incoming-fwd-modal-received-date', '');
-    setForwardField('#incoming-fwd-modal-received-by', '');
+    const dash = '—';
+    const receivedDateValue = String(row?.received_date || '').trim();
+    const receivedByValue = String(row?.received_by || '').trim();
+    setForwardField(
+      '#incoming-fwd-modal-received-date',
+      isReceivedState(row?.document_state) ? (receivedDateValue || dash) : '',
+    );
+    setForwardField(
+      '#incoming-fwd-modal-received-by',
+      isReceivedState(row?.document_state) ? (receivedByValue || dash) : '',
+    );
     setForwardControlNumberDisplay(row?.control_number);
     renderForwardModalFlow(row);
     renderFwdRecipientSuggestions([]);
@@ -862,8 +871,16 @@ function buildIncomingMain(currentUser) {
     setModalField('#incoming-modal-forwarded-to', row?.recipient_name || '');
     setModalField('#incoming-modal-forwarded-to-dept', row?.recipient_department || '');
     setModalField('#incoming-modal-carrier', row?.carrier || '');
-    setModalField('#incoming-modal-received-date', row?.received_date || '');
-    setModalField('#incoming-modal-received-by', row?.received_by || '');
+    const receivedDateValue = String(row?.received_date || '').trim();
+    const receivedByValue = String(row?.received_by || '').trim();
+    setModalField(
+      '#incoming-modal-received-date',
+      isReceivedState(row?.document_state) ? (receivedDateValue || dash) : '',
+    );
+    setModalField(
+      '#incoming-modal-received-by',
+      isReceivedState(row?.document_state) ? (receivedByValue || dash) : '',
+    );
     toggleReceivedFields(row);
     setControlNumberDisplay(row?.control_number);
 
