@@ -3,7 +3,7 @@ import secrets
 from urllib.parse import urlsplit
 
 from django.conf import settings
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 from django.contrib.auth.models import User
 from django.db.models import Q
 from django.http import JsonResponse
@@ -173,6 +173,102 @@ def auth_me(request):
 def auth_logout(request):
     logout(request)
     return JsonResponse({'ok': True, 'redirect': '/'})
+
+
+@csrf_exempt
+@require_http_methods(['POST'])
+def auth_change_username(request):
+    unauthorized = _require_authenticated(request)
+    if unauthorized:
+        return unauthorized
+
+    payload = _parse_json(request)
+    if payload is None:
+        return JsonResponse({'error': 'Invalid JSON.'}, status=400)
+
+    current_username = (payload.get('current_username') or '').strip()
+    new_username = (payload.get('new_username') or '').strip()
+    confirm_username = (payload.get('confirm_username') or '').strip()
+
+    if not current_username or not new_username or not confirm_username:
+        return JsonResponse({'error': 'Please complete all username fields.'}, status=400)
+    if new_username != confirm_username:
+        return JsonResponse({'error': 'New Username and Confirm Username do not match.'}, status=400)
+
+    existing_role = UserRoleConfig.objects.filter(
+        username__iexact=request.user.username,
+        is_active=True,
+    ).first()
+    expected_current_username = (
+        (existing_role.username if existing_role else request.user.username) or ''
+    ).strip()
+    if current_username.lower() != expected_current_username.lower():
+        return JsonResponse({'error': 'Current Username is incorrect.'}, status=400)
+
+    username_taken_in_django = User.objects.filter(
+        username__iexact=new_username,
+    ).exclude(pk=request.user.pk).exists()
+    username_taken_in_roles = UserRoleConfig.objects.filter(
+        username__iexact=new_username,
+    ).exclude(pk=existing_role.pk if existing_role else None).exists()
+    if username_taken_in_django or username_taken_in_roles:
+        return JsonResponse({'error': 'That username is already in use.'}, status=400)
+
+    request.user.username = new_username
+    request.user.save(update_fields=['username'])
+    if existing_role:
+        existing_role.username = new_username
+        existing_role.save(update_fields=['username', 'updated_at'])
+
+    return JsonResponse({
+        'ok': True,
+        'message': 'Username updated successfully.',
+        'username': request.user.username,
+    })
+
+
+@csrf_exempt
+@require_http_methods(['POST'])
+def auth_change_password(request):
+    unauthorized = _require_authenticated(request)
+    if unauthorized:
+        return unauthorized
+
+    payload = _parse_json(request)
+    if payload is None:
+        return JsonResponse({'error': 'Invalid JSON.'}, status=400)
+
+    current_password = payload.get('current_password') or ''
+    new_password = payload.get('new_password') or ''
+    confirm_password = payload.get('confirm_password') or ''
+
+    if not current_password or not new_password or not confirm_password:
+        return JsonResponse({'error': 'Please complete all password fields.'}, status=400)
+    if new_password != confirm_password:
+        return JsonResponse({'error': 'New Password and Confirm Password do not match.'}, status=400)
+    if len(new_password) < 8:
+        return JsonResponse({'error': 'New Password must be at least 8 characters.'}, status=400)
+
+    existing_role = UserRoleConfig.objects.filter(
+        username__iexact=request.user.username,
+        is_active=True,
+    ).first()
+    role_password_matches = bool(existing_role and existing_role.password == current_password)
+    if not (request.user.check_password(current_password) or role_password_matches):
+        return JsonResponse({'error': 'Current Password is incorrect.'}, status=400)
+
+    request.user.set_password(new_password)
+    request.user.save(update_fields=['password'])
+    update_session_auth_hash(request, request.user)
+
+    if existing_role:
+        existing_role.password = new_password
+        existing_role.save(update_fields=['password', 'updated_at'])
+
+    return JsonResponse({
+        'ok': True,
+        'message': 'Password updated successfully.',
+    })
 
 
 def _require_authenticated(request):
