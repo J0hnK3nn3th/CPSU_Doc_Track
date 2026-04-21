@@ -142,13 +142,13 @@ function buildDashboardMain() {
         </div>
         <div class="admin-panel__body admin-quick">
           <button type="button" class="admin-quick__btn admin-quick__btn--primary" id="admin-action-register">
-            Register new document
+            Add New Document
           </button>
           <button type="button" class="admin-quick__btn admin-quick__btn--secondary" id="admin-action-route">
-            Assign routing slip
+            Add New Office/Department
           </button>
           <button type="button" class="admin-quick__btn admin-quick__btn--secondary" id="admin-action-report">
-            Export status report
+            Add New User and Role
           </button>
         </div>
       </section>
