@@ -42,6 +42,49 @@ function badgeClass(kind) {
   return 'admin-badge admin-badge--info';
 }
 
+function formatCount(value) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return '0';
+  return new Intl.NumberFormat().format(numeric);
+}
+
+async function loadDashboardStats(main) {
+  const totalDocumentsEl = main.querySelector('#admin-stat-total-documents');
+  const totalOfficesEl = main.querySelector('#admin-stat-total-offices');
+  const totalUsersEl = main.querySelector('#admin-stat-total-users');
+  const totalCompletedEl = main.querySelector('#admin-stat-total-completed');
+  if (!totalDocumentsEl || !totalOfficesEl || !totalUsersEl || !totalCompletedEl) return;
+
+  try {
+    const [documentsRes, officesRes, usersRes] = await Promise.all([
+      fetch(apiUrl('/api/outgoing-documents/'), { credentials: 'include' }),
+      fetch(apiUrl('/api/system-config/offices/'), { credentials: 'include' }),
+      fetch(apiUrl('/api/system-config/usersRoles/'), { credentials: 'include' }),
+    ]);
+    if (!documentsRes.ok || !officesRes.ok || !usersRes.ok) return;
+
+    const [documentsData, officesData, usersData] = await Promise.all([
+      documentsRes.json(),
+      officesRes.json(),
+      usersRes.json(),
+    ]);
+    const documents = Array.isArray(documentsData?.rows) ? documentsData.rows : [];
+    const offices = Array.isArray(officesData?.rows) ? officesData.rows : [];
+    const users = Array.isArray(usersData?.rows) ? usersData.rows : [];
+
+    const completedCount = documents.filter(
+      (row) => String(row?.document_state || '').trim().toLowerCase() === 'completed',
+    ).length;
+
+    totalDocumentsEl.textContent = formatCount(documents.length);
+    totalOfficesEl.textContent = formatCount(offices.length);
+    totalUsersEl.textContent = formatCount(users.length);
+    totalCompletedEl.textContent = formatCount(completedCount);
+  } catch {
+    /* keep initial values if stats request fails */
+  }
+}
+
 function buildDashboardMain() {
   const main = document.createElement('main');
   main.className = 'admin-main admin-dashboard-main';
@@ -53,24 +96,20 @@ function buildDashboardMain() {
 
     <section class="admin-stats" aria-label="Summary statistics">
       <article class="admin-stat">
-        <p class="admin-stat__label">Registered documents</p>
-        <p class="admin-stat__value">1,248</p>
-        <p class="admin-stat__hint">YTD · all campuses</p>
+        <p class="admin-stat__label">Total Documents</p>
+        <p class="admin-stat__value" id="admin-stat-total-documents">0</p>
       </article>
       <article class="admin-stat">
-        <p class="admin-stat__label">In transit</p>
-        <p class="admin-stat__value">86</p>
-        <p class="admin-stat__hint">Awaiting next office</p>
+        <p class="admin-stat__label">Total Offices/Departments</p>
+        <p class="admin-stat__value" id="admin-stat-total-offices">0</p>
       </article>
       <article class="admin-stat">
-        <p class="admin-stat__label">Pending review</p>
-        <p class="admin-stat__value">23</p>
-        <p class="admin-stat__hint">Action required</p>
+        <p class="admin-stat__label">Total Users</p>
+        <p class="admin-stat__value" id="admin-stat-total-users">0</p>
       </article>
       <article class="admin-stat">
-        <p class="admin-stat__label">Active users</p>
-        <p class="admin-stat__value">412</p>
-        <p class="admin-stat__hint">Staff with routing access</p>
+        <p class="admin-stat__label">Total Completed Process</p>
+        <p class="admin-stat__value" id="admin-stat-total-completed">0</p>
       </article>
     </section>
 
@@ -141,6 +180,7 @@ function buildDashboardMain() {
   main.querySelector('#admin-action-register')?.addEventListener('click', () => logPlaceholder('Register new document'));
   main.querySelector('#admin-action-route')?.addEventListener('click', () => logPlaceholder('Assign routing slip'));
   main.querySelector('#admin-action-report')?.addEventListener('click', () => logPlaceholder('Export status report'));
+  loadDashboardStats(main);
 
   return main;
 }
