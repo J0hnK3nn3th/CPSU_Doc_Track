@@ -51,7 +51,7 @@ function renderRecentLogs(main, rows) {
   if (!rows.length) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="3">No recent logs found.</td>
+        <td colspan="4">No recent logs found.</td>
       </tr>
     `;
     return;
@@ -60,7 +60,8 @@ function renderRecentLogs(main, rows) {
     .map(
       (row) => `
       <tr>
-        <td><strong>${row.actor_username || 'System'}</strong></td>
+        <td><strong>${row.actor_role || 'System'}</strong></td>
+        <td>${row.actor_full_name || 'System'}</td>
         <td><span class="${badgeClass(activityBadge(row.action))}">${row.action || '-'}</span></td>
         <td>${formatDateTime(row.created_at)}</td>
       </tr>
@@ -161,6 +162,7 @@ function buildDashboardMain() {
               <thead>
                 <tr>
                   <th scope="col">Role</th>
+                  <th scope="col">Full Name</th>
                   <th scope="col">Action</th>
                   <th scope="col">Timestamp</th>
                 </tr>

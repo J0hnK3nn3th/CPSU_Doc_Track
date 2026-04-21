@@ -785,11 +785,44 @@ def activity_logs_collection(request):
     if auth_error:
         return auth_error
 
-    rows = ActivityLog.objects.all()[:1000]
-    data = [
-        {
+    rows = list(ActivityLog.objects.all()[:1000])
+    usernames = {row.actor_username for row in rows if row.actor_username}
+    role_rows = UserRoleConfig.objects.filter(
+        username__in=usernames,
+        is_active=True,
+    ).values('username', 'position_role', 'first_name', 'middle_name', 'last_name', 'name_extension')
+    user_meta_by_username = {}
+    for item in role_rows:
+        key = str(item['username'] or '').strip().lower()
+        first_name = (item.get('first_name') or '').strip()
+        middle_name = (item.get('middle_name') or '').strip()
+        last_name = (item.get('last_name') or '').strip()
+        name_extension = (item.get('name_extension') or '').strip()
+        full_name_parts = [first_name, middle_name, last_name, name_extension]
+        full_name = ' '.join(part for part in full_name_parts if part).strip()
+        user_meta_by_username[key] = {
+            'role': (item.get('position_role') or '').strip(),
+            'full_name': full_name,
+        }
+
+    def _role_and_name_for_username(actor_username):
+        key = str(actor_username or '').strip().lower()
+        if not key:
+            return '', ''
+        meta = user_meta_by_username.get(key)
+        if meta:
+            return meta.get('role', ''), meta.get('full_name', '')
+        # Admin/Django-auth users not present in UserRoleConfig.
+        return 'Admin', 'System Administrator'
+
+    data = []
+    for row in rows:
+        actor_role, actor_full_name = _role_and_name_for_username(row.actor_username)
+        data.append({
             'id': row.activity_log_id,
             'actor_username': row.actor_username,
+            'actor_role': actor_role,
+            'actor_full_name': actor_full_name,
             'action': row.action,
             'target': row.target,
             'details': row.details,
@@ -797,7 +830,5 @@ def activity_logs_collection(request):
             'ip_address': row.ip_address,
             'user_agent': row.user_agent,
             'created_at': row.created_at.isoformat(),
-        }
-        for row in rows
-    ]
+        })
     return JsonResponse({'rows': data})
