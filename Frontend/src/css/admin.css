@@ -197,6 +197,11 @@ body {
   overflow-x: auto;
 }
 
+.admin-table-wrap--scroll {
+  max-height: 290px;
+  overflow-y: auto;
+}
+
 .admin-table {
   width: 100%;
   border-collapse: collapse;
@@ -217,6 +222,12 @@ body {
   letter-spacing: 0.04em;
   color: var(--admin-muted);
   background: #fafbfc;
+}
+
+.admin-table-wrap--scroll .admin-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
 .admin-table tr:last-child td {
@@ -289,13 +300,13 @@ body {
 }
 
 .admin-quick__btn--secondary {
-  color: var(--admin-primary);
-  background: #fff;
-  border: 1px solid color-mix(in srgb, var(--admin-primary) 35%, var(--admin-border));
+  color: #fff;
+  background: var(--admin-primary);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--admin-primary) 38%, transparent);
 }
 
 .admin-quick__btn--secondary:hover {
-  background: color-mix(in srgb, var(--admin-primary-light) 22%, #fff);
+  background: color-mix(in srgb, var(--admin-primary) 88%, #000);
 }
 
 .admin-quick__btn:active {

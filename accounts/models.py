@@ -82,3 +82,18 @@ class OutgoingDocument(models.Model):
 
     class Meta:
         ordering = ['-created_at']
+
+
+class ActivityLog(models.Model):
+    activity_log_id = models.BigAutoField(primary_key=True)
+    actor_username = models.CharField(max_length=150, blank=True)
+    action = models.CharField(max_length=120)
+    target = models.CharField(max_length=255, blank=True)
+    details = models.TextField(blank=True)
+    source = models.CharField(max_length=30, default='BACKEND')
+    ip_address = models.CharField(max_length=64, blank=True)
+    user_agent = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']

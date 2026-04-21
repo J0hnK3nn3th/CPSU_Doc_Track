@@ -12,7 +12,7 @@ from django.views.decorators.http import require_http_methods
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 
-from .models import DocumentType, OfficeDepartment, OutgoingDocument, UserRoleConfig
+from .models import ActivityLog, DocumentType, OfficeDepartment, OutgoingDocument, UserRoleConfig
 
 _TRUSTED_LOGIN_PREFIXES = (
     'http://localhost:5173/',
@@ -72,6 +72,7 @@ def auth_csrf(request):
 @require_http_methods(['POST'])
 def auth_login(request):
     if not _login_request_allowed(request):
+        _record_activity(request, 'AUTH_LOGIN_BLOCKED', target='auth', details='Origin not allowed')
         return JsonResponse({'error': 'Request not allowed.'}, status=403)
     try:
         body = json.loads(request.body.decode())
@@ -82,6 +83,7 @@ def auth_login(request):
     password = body.get('password') or ''
 
     if not identifier or not password:
+        _record_activity(request, 'AUTH_LOGIN_FAILED', target=identifier, details='Missing credentials')
         return JsonResponse({'error': 'Please enter your username and password.'}, status=400)
 
     # Try Django auth user first (supports username/email login).
@@ -98,6 +100,7 @@ def auth_login(request):
             is_active=True,
         ).first()
         if role_user is None or role_user.password != password:
+            _record_activity(request, 'AUTH_LOGIN_FAILED', target=identifier, details='Invalid credentials')
             return JsonResponse({'error': 'Invalid username or password.'}, status=401)
 
         # Ensure a matching Django auth user exists so session auth works.
@@ -118,9 +121,11 @@ def auth_login(request):
 
         user = authenticate(request, username=user.username, password=password)
         if user is None:
+            _record_activity(request, 'AUTH_LOGIN_FAILED', target=identifier, details='Auth backend reject')
             return JsonResponse({'error': 'Invalid username or password.'}, status=401)
 
     login(request, user)
+    _record_activity(request, 'AUTH_LOGIN_SUCCESS', target=user.username, details='User logged in')
 
     # Send role-based landing page:
     # users listed in accounts_userroleconfig go to user page.
@@ -171,6 +176,8 @@ def auth_me(request):
 @csrf_exempt
 @require_http_methods(['POST'])
 def auth_logout(request):
+    username = request.user.username if request.user.is_authenticated else ''
+    _record_activity(request, 'AUTH_LOGOUT', target=username, details='User logged out')
     logout(request)
     return JsonResponse({'ok': True, 'redirect': '/'})
 
@@ -219,6 +226,7 @@ def auth_change_username(request):
     if existing_role:
         existing_role.username = new_username
         existing_role.save(update_fields=['username', 'updated_at'])
+    _record_activity(request, 'AUTH_CHANGE_USERNAME', target=new_username, details=f'Changed from {current_username}')
 
     return JsonResponse({
         'ok': True,
@@ -264,6 +272,7 @@ def auth_change_password(request):
     if existing_role:
         existing_role.password = new_password
         existing_role.save(update_fields=['password', 'updated_at'])
+    _record_activity(request, 'AUTH_CHANGE_PASSWORD', target=request.user.username, details='Password updated')
 
     return JsonResponse({
         'ok': True,
@@ -291,6 +300,47 @@ def _parse_json(request):
         return json.loads(request.body.decode())
     except (json.JSONDecodeError, UnicodeDecodeError):
         return None
+
+
+def _request_ip_address(request):
+    forwarded_for = (request.META.get('HTTP_X_FORWARDED_FOR') or '').strip()
+    if forwarded_for:
+        return forwarded_for.split(',')[0].strip()
+    return (request.META.get('REMOTE_ADDR') or '').strip()
+
+
+def _record_activity(request, action, *, target='', details='', source='BACKEND'):
+    actor_username = ''
+    if getattr(request, 'user', None) and request.user.is_authenticated:
+        actor_username = request.user.username or ''
+    elif isinstance(request, dict):
+        actor_username = str(request.get('username') or '').strip()
+
+    resolved_source = str(source or 'BACKEND').strip()[:30] or 'BACKEND'
+    if hasattr(request, 'headers'):
+        resolved_source = (
+            request.headers.get('X-Activity-Source')
+            or request.headers.get('x-activity-source')
+            or resolved_source
+        )[:30]
+    header_action = ''
+    if hasattr(request, 'headers'):
+        header_action = (
+            request.headers.get('X-Activity-Action')
+            or request.headers.get('x-activity-action')
+            or ''
+        ).strip()
+    final_action = str(action or '').strip()[:120] or header_action[:120] or 'SYSTEM_EVENT'
+
+    ActivityLog.objects.create(
+        actor_username=actor_username,
+        action=final_action,
+        target=str(target or '').strip()[:255],
+        details=str(details or ''),
+        source=resolved_source,
+        ip_address=_request_ip_address(request) if hasattr(request, 'META') else '',
+        user_agent=((request.headers.get('User-Agent') or '') if hasattr(request, 'headers') else ''),
+    )
 
 
 def _serialize_item(tab_name, obj):
@@ -387,6 +437,12 @@ def system_config_collection(request, tab_name):
         obj.save()
     except Exception as exc:
         return JsonResponse({'error': str(exc)}, status=400)
+    _record_activity(
+        request,
+        f'SYSTEM_CONFIG_CREATE_{tab_name.upper()}',
+        target=str(obj.pk),
+        details=f'Created new entry in {tab_name}',
+    )
     return JsonResponse({'row': _serialize_item(tab_name, obj)}, status=201)
 
 
@@ -412,6 +468,12 @@ def system_config_item(request, tab_name, item_id):
         obj.save()
     except Exception as exc:
         return JsonResponse({'error': str(exc)}, status=400)
+    _record_activity(
+        request,
+        f'SYSTEM_CONFIG_UPDATE_{tab_name.upper()}',
+        target=str(item_id),
+        details=f'Updated entry in {tab_name}',
+    )
     return JsonResponse({'row': _serialize_item(tab_name, obj)})
 
 
@@ -429,6 +491,12 @@ def system_config_disable(request, tab_name, item_id):
     obj = get_object_or_404(model, pk=item_id)
     obj.is_active = False
     obj.save(update_fields=['is_active', 'updated_at'])
+    _record_activity(
+        request,
+        f'SYSTEM_CONFIG_DISABLE_{tab_name.upper()}',
+        target=str(item_id),
+        details=f'Disabled entry in {tab_name}',
+    )
     return JsonResponse({'row': _serialize_item(tab_name, obj)})
 
 
@@ -446,6 +514,12 @@ def system_config_enable(request, tab_name, item_id):
     obj = get_object_or_404(model, pk=item_id)
     obj.is_active = True
     obj.save(update_fields=['is_active', 'updated_at'])
+    _record_activity(
+        request,
+        f'SYSTEM_CONFIG_ENABLE_{tab_name.upper()}',
+        target=str(item_id),
+        details=f'Enabled entry in {tab_name}',
+    )
     return JsonResponse({'row': _serialize_item(tab_name, obj)})
 
 
@@ -621,6 +695,12 @@ def outgoing_documents_collection(request):
         obj.save()
     except Exception as exc:
         return JsonResponse({'error': str(exc)}, status=400)
+    _record_activity(
+        request,
+        'OUTGOING_DOCUMENT_CREATE',
+        target=obj.control_number or str(obj.pk),
+        details=f'Document "{obj.subject}" created with state {obj.document_state}',
+    )
 
     return JsonResponse({'row': _serialize_outgoing_document(obj)}, status=201)
 
@@ -657,6 +737,12 @@ def outgoing_document_detail(request, pk):
             )
             obj.document_state = 'FORWARDED'
             obj.save()
+            _record_activity(
+                request,
+                'OUTGOING_DOCUMENT_FORWARD',
+                target=obj.control_number or str(obj.pk),
+                details=f'Forwarded to {obj.recipient_name} ({obj.recipient_department})',
+            )
             return JsonResponse({'row': _serialize_outgoing_document(obj)})
 
         new_state = (payload.get('document_state') or '').strip().upper()
@@ -674,8 +760,44 @@ def outgoing_document_detail(request, pk):
             obj.office_name = _current_user_office_department(request)
             obj.received_at = timezone.now()
             obj.save(update_fields=['document_state', 'received_by', 'office_name', 'received_at', 'updated_at'])
+            _record_activity(
+                request,
+                'OUTGOING_DOCUMENT_RECEIVE',
+                target=obj.control_number or str(obj.pk),
+                details=f'Received by {obj.received_by}',
+            )
         else:
             obj.save(update_fields=['document_state', 'updated_at'])
+            _record_activity(
+                request,
+                'OUTGOING_DOCUMENT_COMPLETE',
+                target=obj.control_number or str(obj.pk),
+                details='Document marked as COMPLETED',
+            )
         return JsonResponse({'row': _serialize_outgoing_document(obj)})
 
     return JsonResponse({'row': _serialize_outgoing_document(obj)})
+
+
+@require_http_methods(['GET'])
+def activity_logs_collection(request):
+    auth_error = _require_authenticated(request)
+    if auth_error:
+        return auth_error
+
+    rows = ActivityLog.objects.all()[:1000]
+    data = [
+        {
+            'id': row.activity_log_id,
+            'actor_username': row.actor_username,
+            'action': row.action,
+            'target': row.target,
+            'details': row.details,
+            'source': row.source,
+            'ip_address': row.ip_address,
+            'user_agent': row.user_agent,
+            'created_at': row.created_at.isoformat(),
+        }
+        for row in rows
+    ]
+    return JsonResponse({'rows': data})

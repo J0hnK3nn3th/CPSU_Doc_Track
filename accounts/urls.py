@@ -15,4 +15,5 @@ urlpatterns = [
     path('system-config/<str:tab_name>/<int:item_id>/enable/', views.system_config_enable, name='system_config_enable'),
     path('outgoing-documents/<int:pk>/', views.outgoing_document_detail, name='outgoing_document_detail'),
     path('outgoing-documents/', views.outgoing_documents_collection, name='outgoing_documents_collection'),
+    path('activity-logs/', views.activity_logs_collection, name='activity_logs_collection'),
 ]

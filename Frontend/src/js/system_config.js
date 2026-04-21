@@ -593,7 +593,9 @@ function buildSystemConfigMain() {
     }
   });
 
-  setActiveTab(main, 'categories');
+  const requestedTab = new URLSearchParams(window.location.search).get('tab');
+  const initialTab = Object.prototype.hasOwnProperty.call(SYSTEM_CONFIG_DATA, requestedTab) ? requestedTab : 'categories';
+  setActiveTab(main, initialTab);
   return main;
 }
 

@@ -1,40 +1,10 @@
 import { createHeader } from '../header, footer, sidebar/header.js';
 import { createSidebar } from '../header, footer, sidebar/sidebar.js';
 import { apiUrl } from './api.js';
+import { navigateWithLoading } from './loading.js';
 
 const PRIMARY = '#84B179';
 const PRIMARY_LIGHT = '#A2CB8B';
-
-const SAMPLE_ROWS = [
-  {
-    id: 'DOC-2026-0142',
-    title: 'Faculty travel reimbursement',
-    status: 'In transit',
-    badge: 'info',
-    updated: 'Apr 12, 2026',
-  },
-  {
-    id: 'DOC-2026-0138',
-    title: 'MOA — community extension',
-    status: 'Pending review',
-    badge: 'warning',
-    updated: 'Apr 11, 2026',
-  },
-  {
-    id: 'DOC-2026-0124',
-    title: 'Procurement request (IT)',
-    status: 'Released',
-    badge: 'success',
-    updated: 'Apr 10, 2026',
-  },
-  {
-    id: 'DOC-2026-0119',
-    title: 'Student records verification',
-    status: 'In transit',
-    badge: 'info',
-    updated: 'Apr 9, 2026',
-  },
-];
 
 function badgeClass(kind) {
   if (kind === 'success') return 'admin-badge admin-badge--success';
@@ -46,6 +16,72 @@ function formatCount(value) {
   const numeric = Number(value);
   if (!Number.isFinite(numeric)) return '0';
   return new Intl.NumberFormat().format(numeric);
+}
+
+function formatDateTime(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '-';
+  return new Intl.DateTimeFormat(undefined, {
+    month: 'short',
+    day: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date);
+}
+
+function activityBadge(action) {
+  const token = String(action || '').toLowerCase();
+  if (token.includes('failed') || token.includes('blocked') || token.includes('disable')) {
+    return 'warning';
+  }
+  if (token.includes('success') || token.includes('create') || token.includes('forward') || token.includes('receive') || token.includes('complete') || token.includes('enable') || token.includes('update')) {
+    return 'success';
+  }
+  return 'info';
+}
+
+function renderRecentLogs(main, rows) {
+  const tbody = main.querySelector('#admin-recent-tbody');
+  const tableWrap = main.querySelector('.admin-table-wrap');
+  if (!tbody) return;
+  if (tableWrap) {
+    tableWrap.classList.toggle('admin-table-wrap--scroll', rows.length > 5);
+  }
+  if (!rows.length) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="3">No recent logs found.</td>
+      </tr>
+    `;
+    return;
+  }
+  tbody.innerHTML = rows
+    .map(
+      (row) => `
+      <tr>
+        <td><strong>${row.actor_username || 'System'}</strong></td>
+        <td><span class="${badgeClass(activityBadge(row.action))}">${row.action || '-'}</span></td>
+        <td>${formatDateTime(row.created_at)}</td>
+      </tr>
+    `,
+    )
+    .join('');
+}
+
+async function loadRecentLogs(main) {
+  try {
+    const res = await fetch(apiUrl('/api/activity-logs/'), { credentials: 'include' });
+    if (!res.ok) {
+      renderRecentLogs(main, []);
+      return;
+    }
+    const payload = await res.json();
+    const rows = Array.isArray(payload?.rows) ? payload.rows.slice(0, 20) : [];
+    renderRecentLogs(main, rows);
+  } catch {
+    renderRecentLogs(main, []);
+  }
 }
 
 async function loadDashboardStats(main) {
@@ -116,7 +152,7 @@ function buildDashboardMain() {
     <div class="admin-panels">
       <section class="admin-panel" aria-labelledby="recent-docs-heading">
         <div class="admin-panel__head">
-          <h2 class="admin-panel__title" id="recent-docs-heading">Recent documents</h2>
+          <h2 class="admin-panel__title" id="recent-docs-heading">Recents Logs</h2>
           <a class="admin-panel__action" href="#">View all</a>
         </div>
         <div class="admin-panel__body">
@@ -124,10 +160,9 @@ function buildDashboardMain() {
             <table class="admin-table">
               <thead>
                 <tr>
-                  <th scope="col">Reference</th>
-                  <th scope="col">Title</th>
-                  <th scope="col">Status</th>
-                  <th scope="col">Updated</th>
+                  <th scope="col">Role</th>
+                  <th scope="col">Action</th>
+                  <th scope="col">Timestamp</th>
                 </tr>
               </thead>
               <tbody id="admin-recent-tbody"></tbody>
@@ -154,33 +189,17 @@ function buildDashboardMain() {
       </section>
     </div>
 
-    <p class="admin-footnote">
-      CPSU Document Track · Admin console. Connect APIs to replace sample figures and table data.
-    </p>
   `;
-
-  const tbody = main.querySelector('#admin-recent-tbody');
-  if (tbody) {
-    tbody.innerHTML = SAMPLE_ROWS.map(
-      (row) => `
-      <tr>
-        <td><strong>${row.id}</strong></td>
-        <td>${row.title}</td>
-        <td><span class="${badgeClass(row.badge)}">${row.status}</span></td>
-        <td>${row.updated}</td>
-      </tr>
-    `,
-    ).join('');
-  }
 
   const logPlaceholder = (label) => {
     console.info(`Admin action: ${label} (wire to API when ready)`);
   };
 
-  main.querySelector('#admin-action-register')?.addEventListener('click', () => logPlaceholder('Register new document'));
-  main.querySelector('#admin-action-route')?.addEventListener('click', () => logPlaceholder('Assign routing slip'));
-  main.querySelector('#admin-action-report')?.addEventListener('click', () => logPlaceholder('Export status report'));
+  main.querySelector('#admin-action-register')?.addEventListener('click', () => navigateWithLoading('system_config.html?tab=categories'));
+  main.querySelector('#admin-action-route')?.addEventListener('click', () => navigateWithLoading('system_config.html?tab=offices'));
+  main.querySelector('#admin-action-report')?.addEventListener('click', () => navigateWithLoading('system_config.html?tab=usersRoles'));
   loadDashboardStats(main);
+  loadRecentLogs(main);
 
   return main;
 }
