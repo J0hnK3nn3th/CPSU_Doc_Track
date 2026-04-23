@@ -23,6 +23,25 @@ _TRUSTED_LOGIN_PREFIXES = (
 _TRUSTED_LOGIN_ORIGINS = {p.rstrip('/') for p in _TRUSTED_LOGIN_PREFIXES}
 ALLOWED_DOCUMENT_STATES = {'FORWARDED', 'RECEIVED', 'COMPLETED'}
 
+_ACTIVITY_ACTION_DISPLAY = {
+    'OUTGOING_DOCUMENT_CREATE': 'FORWARDED',
+    'OUTGOING_DOCUMENT_FORWARD': 'FORWARDED',
+    'OUTGOING_DOCUMENT_RECEIVE': 'RECEIVED',
+    'OUTGOING_DOCUMENT_COMPLETE': 'COMPLETED',
+    'AUTH_LOGIN_SUCCESS': 'LOG IN',
+    'AUTH_LOGIN_FAILED': 'LOGIN FAILED',
+    'AUTH_LOGOUT': 'LOG OUT',
+}
+
+
+def _activity_action_display(code):
+    key = str(code or '').strip()
+    if key in _ACTIVITY_ACTION_DISPLAY:
+        return _ACTIVITY_ACTION_DISPLAY[key]
+    if not key:
+        return '-'
+    return key.replace('_', ' ').title()
+
 
 def _origin_from_url(value):
     """Return normalized origin from full URL/header value."""
@@ -813,7 +832,7 @@ def activity_logs_collection(request):
         if meta:
             return meta.get('role', ''), meta.get('full_name', '')
         # Admin/Django-auth users not present in UserRoleConfig.
-        return 'Admin', 'System Administrator'
+        return 'System Admin', 'System Administrator'
 
     data = []
     for row in rows:
@@ -824,6 +843,7 @@ def activity_logs_collection(request):
             'actor_role': actor_role,
             'actor_full_name': actor_full_name,
             'action': row.action,
+            'action_display': _activity_action_display(row.action),
             'target': row.target,
             'details': row.details,
             'source': row.source,
@@ -831,4 +851,19 @@ def activity_logs_collection(request):
             'user_agent': row.user_agent,
             'created_at': row.created_at.isoformat(),
         })
-    return JsonResponse({'rows': data})
+    roles = sorted({(r['actor_role'] or 'System') for r in data})
+    full_names = sorted({(r['actor_full_name'] or 'System') for r in data})
+    action_by_code = {}
+    for r in data:
+        code = r.get('action') or ''
+        action_by_code[code] = r.get('action_display') or r.get('action') or '-'
+    actions = sorted(
+        [{'value': k, 'label': v} for k, v in action_by_code.items()],
+        key=lambda x: (x['label'] or '').lower(),
+    )
+    return JsonResponse({
+        'rows': data,
+        'roles': roles,
+        'full_names': full_names,
+        'actions': actions,
+    })

@@ -942,7 +942,6 @@ function buildIncomingMain(currentUser) {
       if (!data.row) throw new Error('Invalid response from server.');
 
       const canMarkComplete = await userCanMarkComplete();
-      let latestRow = data.row;
       if (canMarkComplete) {
         const completeRes = await fetch(apiUrl(`/api/outgoing-documents/${docId}/`), {
           method: 'PATCH',
@@ -952,21 +951,13 @@ function buildIncomingMain(currentUser) {
         });
         const completeData = await completeRes.json().catch(() => ({}));
         if (!completeRes.ok) throw new Error(completeData.error || 'Failed to complete document.');
-        if (!completeData.row) throw new Error('Invalid completion response from server.');
-        latestRow = completeData.row;
       }
 
       if (Array.isArray(main.__incomingRows)) {
-        main.__incomingRows = main.__incomingRows.map((row) => (
-          Number(row?.id) === docId ? latestRow : row
-        ));
+        main.__incomingRows = main.__incomingRows.filter((row) => Number(row?.id) !== docId);
       }
       applyCurrentFilters();
-      if (canMarkComplete) {
-        closeModal();
-        return;
-      }
-      populateViewModal(latestRow);
+      closeModal();
     } catch (error) {
       console.warn('Incoming: failed to receive document', error);
     } finally {

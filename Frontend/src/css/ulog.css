@@ -1,0 +1,138 @@
+.logs-main {
+  max-width: none;
+}
+
+.logs-panel .admin-table-wrap {
+  overflow-x: auto;
+  overflow-y: visible;
+}
+
+.logs-panel .admin-table-wrap.logs-table-wrap--scroll {
+  max-height: min(75vh, 420px);
+  overflow-y: auto;
+}
+
+.logs-panel .admin-table-wrap.logs-table-wrap--scroll .admin-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #fafbfc;
+}
+
+.logs-footnote {
+  margin: 0;
+  padding: 0.65rem 1.15rem 1rem;
+  font-size: 0.8125rem;
+  color: var(--admin-muted);
+  border-top: 1px solid var(--admin-border);
+  background: #fafbfc;
+}
+
+.logs-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem 1rem;
+  padding: 1rem 1.15rem;
+  border-bottom: 1px solid var(--admin-border);
+  background: #fafbfc;
+}
+
+.logs-filters__grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.65rem 1rem;
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 1200px) {
+  .logs-filters__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 960px) {
+  .logs-filters__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .logs-filters__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.logs-filters__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.logs-filters__label {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--admin-muted);
+}
+
+.logs-filters__input {
+  width: 100%;
+  min-width: 0;
+  padding: 0.45rem 0.55rem;
+  font: inherit;
+  font-size: 0.875rem;
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--admin-text);
+}
+
+.logs-filters__input:focus {
+  outline: 2px solid color-mix(in srgb, var(--admin-primary) 45%, transparent);
+  outline-offset: 1px;
+  border-color: color-mix(in srgb, var(--admin-primary) 35%, var(--admin-border));
+}
+
+.logs-filters__select {
+  cursor: pointer;
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--admin-muted) 50%),
+    linear-gradient(135deg, var(--admin-muted) 50%, transparent 50%);
+  background-position: calc(100% - 1rem) 55%, calc(100% - 0.65rem) 55%;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  padding-right: 2rem;
+}
+
+.logs-filters__date {
+  min-height: 2.25rem;
+  color-scheme: light;
+}
+
+.logs-filters__clear {
+  flex-shrink: 0;
+  padding: 0.45rem 0.85rem;
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--admin-muted);
+  background: #fff;
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.logs-filters__clear:hover {
+  color: var(--admin-text);
+  border-color: color-mix(in srgb, var(--admin-primary) 28%, var(--admin-border));
+  background: color-mix(in srgb, var(--admin-primary-light) 12%, #fff);
+}
+
+.logs-filters__clear:focus-visible {
+  outline: 2px solid var(--admin-primary);
+  outline-offset: 2px;
+}

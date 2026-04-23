@@ -20,6 +20,12 @@ const NAV_ITEMS = [
     href: 'ucoutgoing.html',
     icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
   },
+  {
+    id: 'logs',
+    label: 'Recent Logs',
+    href: 'uclogs.html',
+    icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>',
+  },
 ];
 
 function getOfficeDepartmentLabel(user) {
@@ -63,7 +69,7 @@ export function createSidebar({ activeId = 'dashboard', onSelect, isAdmin = true
   initNavigationLoading();
   const visibleIds = isAdmin
     ? NAV_ITEMS.map((item) => item.id)
-    : ['dashboard', 'incoming', 'outgoing'];
+    : ['dashboard', 'incoming', 'outgoing', 'logs'];
   const items = NAV_ITEMS
     .filter((item) => visibleIds.includes(item.id))
     .map((item) => {
@@ -71,6 +77,7 @@ export function createSidebar({ activeId = 'dashboard', onSelect, isAdmin = true
       if (item.id === 'dashboard') return { ...item, href: 'cuser.html' };
       if (item.id === 'incoming') return { ...item, href: 'ucincoming.html' };
       if (item.id === 'outgoing') return { ...item, href: 'ucoutgoing.html' };
+      if (item.id === 'logs') return { ...item, href: 'uclogs.html' };
       return item;
     });
 

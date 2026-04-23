@@ -62,7 +62,7 @@ function renderRecentLogs(main, rows) {
       <tr>
         <td><strong>${row.actor_role || 'System'}</strong></td>
         <td>${row.actor_full_name || 'System'}</td>
-        <td><span class="${badgeClass(activityBadge(row.action))}">${row.action || '-'}</span></td>
+        <td><span class="${badgeClass(activityBadge(row.action))}">${row.action_display || row.action || '-'}</span></td>
         <td>${formatDateTime(row.created_at)}</td>
       </tr>
     `,
@@ -133,20 +133,32 @@ function buildDashboardMain() {
 
     <section class="admin-stats" aria-label="Summary statistics">
       <article class="admin-stat">
-        <p class="admin-stat__label">Total Documents</p>
-        <p class="admin-stat__value" id="admin-stat-total-documents">0</p>
+        <span class="admin-stat__icon" aria-hidden="true"><i class="fa-solid fa-file-lines"></i></span>
+        <div class="admin-stat__content">
+          <p class="admin-stat__label">Total Documents</p>
+          <p class="admin-stat__value" id="admin-stat-total-documents">0</p>
+        </div>
       </article>
       <article class="admin-stat">
-        <p class="admin-stat__label">Total Offices/Departments</p>
-        <p class="admin-stat__value" id="admin-stat-total-offices">0</p>
+        <span class="admin-stat__icon" aria-hidden="true"><i class="fa-solid fa-building"></i></span>
+        <div class="admin-stat__content">
+          <p class="admin-stat__label">Total Offices/Departments</p>
+          <p class="admin-stat__value" id="admin-stat-total-offices">0</p>
+        </div>
       </article>
       <article class="admin-stat">
-        <p class="admin-stat__label">Total Users</p>
-        <p class="admin-stat__value" id="admin-stat-total-users">0</p>
+        <span class="admin-stat__icon" aria-hidden="true"><i class="fa-solid fa-users"></i></span>
+        <div class="admin-stat__content">
+          <p class="admin-stat__label">Total Users</p>
+          <p class="admin-stat__value" id="admin-stat-total-users">0</p>
+        </div>
       </article>
       <article class="admin-stat">
-        <p class="admin-stat__label">Total Completed Process</p>
-        <p class="admin-stat__value" id="admin-stat-total-completed">0</p>
+        <span class="admin-stat__icon" aria-hidden="true"><i class="fa-solid fa-circle-check"></i></span>
+        <div class="admin-stat__content">
+          <p class="admin-stat__label">Total Completed Process</p>
+          <p class="admin-stat__value" id="admin-stat-total-completed">0</p>
+        </div>
       </article>
     </section>
 
@@ -154,7 +166,7 @@ function buildDashboardMain() {
       <section class="admin-panel" aria-labelledby="recent-docs-heading">
         <div class="admin-panel__head">
           <h2 class="admin-panel__title" id="recent-docs-heading">Recents Logs</h2>
-          <a class="admin-panel__action" href="#">View all</a>
+          <a class="admin-panel__action" href="logs.html">View all</a>
         </div>
         <div class="admin-panel__body">
           <div class="admin-table-wrap">
@@ -175,7 +187,7 @@ function buildDashboardMain() {
 
       <section class="admin-panel" aria-labelledby="quick-actions-heading">
         <div class="admin-panel__head">
-          <h2 class="admin-panel__title" id="quick-actions-heading">Quick actions</h2>
+          <h2 class="admin-panel__title" id="quick-actions-heading">Quick Links</h2>
         </div>
         <div class="admin-panel__body admin-quick">
           <button type="button" class="admin-quick__btn admin-quick__btn--primary" id="admin-action-register">

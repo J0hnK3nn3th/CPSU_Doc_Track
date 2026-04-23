@@ -214,7 +214,7 @@ export function createHeader({ onMenuToggle } = {}) {
         decoding="async"
       />
       <div class="admin-header__titles">
-        <span class="admin-header__app">CPSU Document Track</span>
+        <span class="admin-header__app">CPSU Document Tracking System</span>
        
       </div>
     </div>

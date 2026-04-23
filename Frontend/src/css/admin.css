@@ -107,6 +107,9 @@ body {
   border-radius: var(--admin-radius);
   border: 1px solid color-mix(in srgb, var(--admin-primary) 16%, var(--admin-border));
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
 }
 
 .admin-stat__label {
@@ -114,6 +117,10 @@ body {
   font-size: 0.8125rem;
   font-weight: 600;
   color: var(--admin-muted);
+}
+
+.admin-stats .admin-stat__label {
+  font-weight: 700;
 }
 
 .admin-stat__value {
@@ -128,6 +135,23 @@ body {
   margin: 0.25rem 0 0;
   font-size: 0.75rem;
   color: var(--admin-muted);
+}
+
+.admin-stat__icon {
+  width: 3.2rem;
+  height: 3.2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  color: var(--admin-primary);
+  background: color-mix(in srgb, var(--admin-primary) 14%, #fff);
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.admin-stat__content {
+  min-width: 0;
 }
 
 .admin-panels {
@@ -163,6 +187,10 @@ body {
     color-mix(in srgb, var(--admin-primary-light) 22%, #fff) 0%,
     #fff 100%
   );
+}
+
+.admin-panels .admin-panel__head {
+  min-height: 66px;
 }
 
 .admin-panel__title {
