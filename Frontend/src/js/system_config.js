@@ -1,7 +1,7 @@
 import { createHeader } from '../header, footer, sidebar/header.js';
 import { createSidebar } from '../header, footer, sidebar/sidebar.js';
 import { apiUrl } from './api.js';
-import { confirmAction, notify, showInfo } from './notifications.js';
+import { confirmAction, notify } from './notifications.js';
 import { hideLoading, showLoading } from './loading.js';
 
 const PRIMARY = '#84B179';
@@ -13,6 +13,12 @@ const SYSTEM_CONFIG_DATA = {
     columns: ['Document Code', 'Document Type', 'Description', 'Status'],
     endpoint: 'categories',
     idField: 'document_type_id',
+    viewFields: [
+      { key: 'code', label: 'Document Code' },
+      { key: 'name', label: 'Document Type' },
+      { key: 'description', label: 'Description' },
+      { key: 'status', label: 'Status' },
+    ],
     mapRow: (row) => [row.code || '-', row.name || '-', row.description || '-', row.status || '-'],
   },
   offices: {
@@ -20,6 +26,14 @@ const SYSTEM_CONFIG_DATA = {
     columns: ['Office Code', 'Office/Department', 'Head', 'Status'],
     endpoint: 'offices',
     idField: 'office_department_id',
+    viewFields: [
+      { key: 'code', label: 'Office Code' },
+      { key: 'name', label: 'Office/Department' },
+      { key: 'head', label: 'Office/Department Head' },
+      { key: 'can_mark_complete', label: 'Can Mark Complete' },
+      { key: 'description', label: 'Description' },
+      { key: 'status', label: 'Status' },
+    ],
     mapRow: (row) => [row.code || '-', row.name || '-', row.head || '-', row.status || '-'],
   },
   usersRoles: {
@@ -27,6 +41,19 @@ const SYSTEM_CONFIG_DATA = {
     columns: ['Username', 'Full Name', 'Office', 'Role', 'Status'],
     endpoint: 'usersRoles',
     idField: 'user_role_id',
+    viewFields: [
+      { key: 'full_name', label: 'Full Name' },
+      { key: 'first_name', label: 'First Name' },
+      { key: 'middle_name', label: 'Middle Name' },
+      { key: 'last_name', label: 'Last Name' },
+      { key: 'name_extension', label: 'Name Extension' },
+      { key: 'office_department', label: 'Office/Department' },
+      { key: 'position_role', label: 'Position/Role' },
+      { key: 'status', label: 'Status' },
+      { key: 'username', label: 'Username' },
+      { key: 'password', label: 'Password' },
+    ],
+    hiddenViewFields: ['id', 'user_role_id'],
     mapRow: (row) => [row.username || '-', row.full_name || '-', row.office_department || '-', row.position_role || '-', row.status || '-'],
   },
 };
@@ -36,19 +63,6 @@ const state = {
   rowsByTab: { categories: [], offices: [], usersRoles: [] },
   editRowByTab: { categories: null, offices: null, usersRoles: null },
 };
-
-function iconSvg(kind) {
-  if (kind === 'view') {
-    return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5c-5.5 0-9.5 5.1-10 6 .5.9 4.5 6 10 6s9.5-5.1 10-6c-.5-.9-4.5-6-10-6Zm0 9a3 3 0 1 1 0-6 3 3 0 0 1 0 6Z"/></svg>';
-  }
-  if (kind === 'edit') {
-    return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 17.25 9.81-9.82 2.76 2.76L5.76 20H3v-2.75ZM20.71 7.04a1 1 0 0 0 0-1.41L18.37 3.3a1 1 0 0 0-1.41 0l-1.68 1.68 2.76 2.76 1.67-1.7Z"/></svg>';
-  }
-  if (kind === 'enable') {
-    return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.2 16.2-3.9-3.9 1.4-1.4 2.5 2.5 8.1-8.1 1.4 1.4Z"/></svg>';
-  }
-  return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm4.6 13.2-1.4 1.4L7.4 8.8l1.4-1.4Z"/></svg>';
-}
 
 function isDisabledRow(row) {
   return String(row?.status || '').toLowerCase() === 'disabled';
@@ -71,9 +85,9 @@ function actionButtons(row) {
 
   return `
     <div class="sys-config-actions">
-      <button type="button" class="sys-config-action-btn" data-action="view" data-id="${rowId}" title="View">${iconSvg('view')}</button>
-      <button type="button" class="sys-config-action-btn" data-action="edit" data-id="${rowId}" title="Edit">${iconSvg('edit')}</button>
-      <button type="button" class="sys-config-action-btn ${toggleModifier}" data-action="${toggleAction}" data-id="${rowId}" title="${toggleTitle}">${iconSvg(toggleAction)}</button>
+      <button type="button" class="sys-config-action-btn" data-action="view" data-id="${rowId}" title="View">View</button>
+      <button type="button" class="sys-config-action-btn" data-action="edit" data-id="${rowId}" title="Edit">Edit</button>
+      <button type="button" class="sys-config-action-btn ${toggleModifier}" data-action="${toggleAction}" data-id="${rowId}" title="${toggleTitle}">${toggleTitle}</button>
     </div>
   `;
 }
@@ -306,7 +320,7 @@ function buildSystemConfigMain() {
             </div>
             <div class="sys-config-modal__field">
               <label for="user-password">Password</label>
-              <input id="user-password" type="password" autocomplete="new-password" />
+              <input id="user-password" type="text" autocomplete="new-password" />
             </div>
           </div>
         </div>
@@ -316,6 +330,7 @@ function buildSystemConfigMain() {
         </footer>
       </div>
     </div>
+
   `;
 
   main.querySelectorAll('.sys-config-tabs__btn').forEach((button) => {
@@ -334,6 +349,11 @@ function buildSystemConfigMain() {
   const firstUsersRolesInput = main.querySelector('#user-first-name');
 
   const allModals = [categoryModal, officeDepartmentModal, usersRolesModal].filter(Boolean);
+  const tabModalMap = {
+    categories: categoryModal,
+    offices: officeDepartmentModal,
+    usersRoles: usersRolesModal,
+  };
 
   const closeAllModals = () => {
     allModals.forEach((modal) => {
@@ -346,9 +366,46 @@ function buildSystemConfigMain() {
   };
 
   const resetForms = () => {
-    main.querySelectorAll('.sys-config-modal input, .sys-config-modal textarea').forEach((field) => {
+    main.querySelectorAll('.sys-config-modal input, .sys-config-modal textarea, .sys-config-modal select').forEach((field) => {
+      if (!(field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement || field instanceof HTMLSelectElement)) return;
+      if (field instanceof HTMLInputElement && (field.type === 'checkbox' || field.type === 'radio')) {
+        field.checked = false;
+        return;
+      }
       field.value = '';
     });
+  };
+
+  const setModalMode = (tabId, mode) => {
+    const modal = tabModalMap[tabId];
+    if (!modal) return;
+    const saveButton = modal.querySelector('.sys-config-modal__btn--primary');
+    const closeButton = modal.querySelector('.sys-config-modal__footer .sys-config-modal__btn:not(.sys-config-modal__btn--primary)');
+    const titleElement = modal.querySelector('.sys-config-modal__title');
+    const fields = modal.querySelectorAll('input, textarea, select');
+    const sectionLabel = SYSTEM_CONFIG_DATA[tabId]?.label || 'Record';
+    const isView = mode === 'view';
+    const isEdit = mode === 'edit';
+
+    if (titleElement) {
+      if (isView) titleElement.textContent = `View ${sectionLabel}`;
+      else if (isEdit) titleElement.textContent = `Edit ${sectionLabel}`;
+      else titleElement.textContent = `Add ${sectionLabel}`;
+    }
+
+    fields.forEach((field) => {
+      if (field instanceof HTMLElement) {
+        field.toggleAttribute('disabled', isView);
+      }
+    });
+
+    if (saveButton instanceof HTMLButtonElement) {
+      saveButton.hidden = isView;
+      saveButton.disabled = isView;
+    }
+    if (closeButton instanceof HTMLButtonElement) {
+      closeButton.textContent = isView ? 'Close' : 'Cancel';
+    }
   };
 
   const openCategoryModal = () => {
@@ -448,22 +505,26 @@ function buildSystemConfigMain() {
     main.querySelector('#user-password').value = row.password || '';
   };
 
-  const openModalForTab = async (tabId, row = null) => {
+  const openModalForTab = async (tabId, row = null, mode = null) => {
+    const resolvedMode = mode || (row ? 'edit' : 'create');
     if (tabId === 'categories') {
       openCategoryModal();
-      state.editRowByTab[tabId] = row;
+      state.editRowByTab[tabId] = resolvedMode === 'edit' ? row : null;
       if (row) fillForm(tabId, row);
+      setModalMode(tabId, resolvedMode);
       return;
     }
     if (tabId === 'offices') {
       openOfficeDepartmentModal();
-      state.editRowByTab[tabId] = row;
+      state.editRowByTab[tabId] = resolvedMode === 'edit' ? row : null;
       if (row) fillForm(tabId, row);
+      setModalMode(tabId, resolvedMode);
       return;
     }
     await openUsersRolesModal(row?.office_department || '');
-    state.editRowByTab[tabId] = row;
+    state.editRowByTab[tabId] = resolvedMode === 'edit' ? row : null;
     if (row) fillForm(tabId, row);
+    setModalMode(tabId, resolvedMode);
   };
 
   main.querySelector('#sys-config-add-new-btn')?.addEventListener('click', () => {
@@ -503,8 +564,8 @@ function buildSystemConfigMain() {
             body: JSON.stringify(payload),
           });
         }
-        await loadTabData(tabId);
-        renderTable(main, tabId);
+        // Keep the user on the same configuration section after saving.
+        await setActiveTab(main, tabId);
         closeAllModals();
         await notify({
           icon: 'success',
@@ -534,13 +595,7 @@ function buildSystemConfigMain() {
     if (!row) return;
 
     if (action === 'view') {
-      const details = Object.entries(row)
-        .map(([key, value]) => `<div><strong>${key}</strong>: ${value ?? '-'}</div>`)
-        .join('');
-      await showInfo({
-        title: `${SYSTEM_CONFIG_DATA[state.activeTab]?.label || 'Record'} details`,
-        html: details,
-      });
+      openModalForTab(state.activeTab, row, 'view');
       return;
     }
     if (action === 'edit') {

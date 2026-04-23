@@ -156,14 +156,27 @@ body {
 
 .admin-panels {
   display: grid;
-  grid-template-columns: 1.4fr 1fr;
+  grid-template-columns: 0.6fr 2.2fr;
   gap: 1rem;
   align-items: start;
+}
+
+.admin-panels > .admin-panel:first-child {
+  grid-column: 2;
+}
+
+.admin-panels > .admin-panel:last-child {
+  grid-column: 1;
 }
 
 @media (max-width: 960px) {
   .admin-panels {
     grid-template-columns: 1fr;
+  }
+
+  .admin-panels > .admin-panel:first-child,
+  .admin-panels > .admin-panel:last-child {
+    grid-column: auto;
   }
 }
 

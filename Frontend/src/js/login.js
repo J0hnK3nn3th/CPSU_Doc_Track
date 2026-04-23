@@ -1,10 +1,11 @@
 import { apiUrl } from './api.js';
 import { notify } from './notifications.js';
-import { initNavigationLoading, navigateWithLoading } from './loading.js';
+import { initNavigationLoading, navigateWithLoading, replaceWithLoading } from './loading.js';
 
 const logoUrl = '/src/images/cpsu%20logo.png';
 
 const ACCENT = '#84B179';
+const LOGOUT_LOCK_KEY = 'auth.logoutLock';
 
 function getCookie(name) {
   const match = document.cookie.match(new RegExp(`(?:^|; )${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}=([^;]*)`));
@@ -74,13 +75,53 @@ async function resolveLoginRedirect(payload) {
   return canMarkComplete ? '/cuser.html' : fallbackTarget;
 }
 
+function inferRedirectFromSession(payload) {
+  if (typeof payload?.redirect === 'string' && payload.redirect) return payload.redirect;
+  const hasUserRole = Boolean(payload?.office_department || payload?.position_role);
+  return hasUserRole ? '/user.html' : '/admin.html';
+}
+
+async function redirectIfAuthenticated() {
+  try {
+    const res = await fetch(apiUrl('/api/auth/me/'), { credentials: 'include' });
+    if (!res.ok) return false;
+
+    const payload = await res.json().catch(() => ({}));
+    if (!payload?.authenticated) return false;
+
+    const target = await resolveLoginRedirect({
+      ...payload,
+      redirect: inferRedirectFromSession(payload),
+    });
+    navigateWithLoading(target);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function ensureCsrf() {
   await fetch(apiUrl('/api/auth/csrf/'), { credentials: 'include' });
 }
 
+function enforceLogoutBackButtonLock() {
+  let locked = false;
+  try {
+    locked = window.sessionStorage.getItem(LOGOUT_LOCK_KEY) === '1';
+  } catch {
+    locked = false;
+  }
+  if (!locked) return;
+
+  window.history.pushState({ loginLock: true }, '', window.location.href);
+  window.addEventListener('popstate', () => {
+    window.history.pushState({ loginLock: true }, '', window.location.href);
+    window.location.replace('/');
+  });
+}
+
 function mountLogin(root = document.querySelector('#app')) {
   if (!root) return;
-  initNavigationLoading();
 
   root.innerHTML = `
     <main class="login-page">
@@ -190,13 +231,19 @@ function mountLogin(root = document.querySelector('#app')) {
       }
 
       const target = await resolveLoginRedirect(payload);
+      try {
+        window.sessionStorage.removeItem(LOGOUT_LOCK_KEY);
+      } catch {
+        // Ignore storage errors.
+      }
       await notify({
         icon: 'success',
         title: 'Login successful',
         text: 'Redirecting to your dashboard...',
         timer: 1200,
       });
-      navigateWithLoading(target);
+      form.reset();
+      replaceWithLoading(target);
     } catch {
       await notify({
         icon: 'error',
@@ -210,4 +257,12 @@ function mountLogin(root = document.querySelector('#app')) {
   });
 }
 
-mountLogin();
+async function initLoginPage() {
+  initNavigationLoading();
+  enforceLogoutBackButtonLock();
+  const redirected = await redirectIfAuthenticated();
+  if (redirected) return;
+  mountLogin();
+}
+
+initLoginPage();

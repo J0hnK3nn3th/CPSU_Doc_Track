@@ -199,39 +199,41 @@
   display: flex;
   align-items: center;
   gap: 0.35rem;
+  flex-wrap: wrap;
 }
 
 .sys-config-action-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1.75rem;
-  height: 1.75rem;
+  min-width: 4rem;
+  min-height: 1.75rem;
+  padding: 0.25rem 0.5rem;
   border: 1px solid #d3dbd3;
   border-radius: 6px;
   background: #fff;
   color: #3a5338;
+  font: inherit;
+  font-size: 0.77rem;
+  font-weight: 600;
+  line-height: 1.2;
   cursor: pointer;
   transition:
     border-color 0.15s ease,
     background 0.15s ease,
-    color 0.15s ease;
+    color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.sys-config-action-btn--danger {
+  color: #9a2f2f;
 }
 
 .sys-config-action-btn:hover {
   border-color: #84b179;
   background: #f4faf2;
   color: #274024;
-}
-
-.sys-config-action-btn svg {
-  width: 0.95rem;
-  height: 0.95rem;
-  fill: currentColor;
-}
-
-.sys-config-action-btn--danger {
-  color: #9a2f2f;
+  box-shadow: 0 3px 8px rgb(20 31 20 / 10%);
 }
 
 .sys-config-action-btn--danger:hover {
@@ -281,6 +283,10 @@ body.sys-config-modal-open {
   overflow: hidden;
 }
 
+.sys-config-modal__dialog--view {
+  width: min(620px, calc(100vw - 2rem));
+}
+
 .sys-config-modal__header {
   display: flex;
   align-items: center;
@@ -310,6 +316,37 @@ body.sys-config-modal-open {
   padding: 1rem;
   display: grid;
   gap: 0.8rem;
+}
+
+.sys-config-modal__details {
+  display: grid;
+  gap: 0.65rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.sys-config-modal__detail-item {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid #dfe7de;
+  border-radius: 8px;
+  background: #fbfdfb;
+}
+
+.sys-config-modal__detail-key {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #436042;
+}
+
+.sys-config-modal__detail-value {
+  font-size: 0.84rem;
+  color: #1f2f1e;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.45;
 }
 
 .sys-config-modal__section-title {
@@ -439,6 +476,10 @@ body.sys-config-modal-open {
   }
 
   .sys-config-modal__row {
+    grid-template-columns: 1fr;
+  }
+
+  .sys-config-modal__details {
     grid-template-columns: 1fr;
   }
 }
