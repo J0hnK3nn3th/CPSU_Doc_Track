@@ -80,7 +80,16 @@
 }
 
 .user-panels {
+  grid-template-columns: 2.2fr 0.6fr;
   align-items: start;
+}
+
+.user-panels > .admin-panel:first-child {
+  grid-column: 1;
+}
+
+.user-panels > .admin-panel:last-child {
+  grid-column: 2;
 }
 
 .user-panels .admin-panel {
@@ -100,6 +109,15 @@
 @media (max-width: 640px) {
   .user-stats {
     grid-template-columns: 1fr;
+  }
+
+  .user-panels {
+    grid-template-columns: 1fr;
+  }
+
+  .user-panels > .admin-panel:first-child,
+  .user-panels > .admin-panel:last-child {
+    grid-column: auto;
   }
 
   .user-main__body {
