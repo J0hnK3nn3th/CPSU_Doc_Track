@@ -10,6 +10,7 @@ ALLOWED_PAGES = {
     'admin',
     'cuser',
     'incoming',
+    'logs',
     'outgoing',
     'system_config',
     'uclogs',
