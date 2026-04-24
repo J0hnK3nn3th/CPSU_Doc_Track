@@ -76,7 +76,7 @@ export function createSidebar({ activeId = 'dashboard', onSelect } = {}) {
       </ul>
     </nav>
     <div class="admin-sidebar__foot">
-      <p class="admin-sidebar__hint">Document routing &amp; compliance</p>
+      <p class="admin-sidebar__hint">CPSU Document Tracking System</p>
     </div>
   `;
 
