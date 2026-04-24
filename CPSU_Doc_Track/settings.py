@@ -35,7 +35,12 @@ DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 
 ALLOWED_HOSTS = _split_csv_env(
     'ALLOWED_HOSTS',
-    ['localhost', '127.0.0.1', 'cpsu-doc-track-1.onrender.com']
+    [
+        'localhost',
+        '127.0.0.1',
+        'cpsu-doc-track-1.onrender.com',
+        'cpsu-doctrack.onrender.com',
+    ]
 )
 
 
@@ -131,6 +136,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 DEFAULT_FRONTEND_ORIGINS = [
     "https://cpsu-doc-track-1.onrender.com",
+    "https://cpsu-doctrack.onrender.com",
 ]
 
 CORS_ALLOWED_ORIGINS = _split_csv_env('CORS_ALLOWED_ORIGINS', DEFAULT_FRONTEND_ORIGINS)
