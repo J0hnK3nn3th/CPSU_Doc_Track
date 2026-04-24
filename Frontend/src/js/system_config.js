@@ -75,6 +75,32 @@ function getRowId(tabId, row) {
   return Number.isFinite(numericId) ? numericId : null;
 }
 
+function applyButtonBackgrounds(main) {
+  if (!main) return;
+
+  main.querySelectorAll('.sys-config-content__add-btn, .sys-config-action-btn, .sys-config-modal__btn--primary').forEach((button) => {
+    if (button instanceof HTMLElement) {
+      button.style.backgroundColor = PRIMARY;
+      button.style.color = '#FFFFFF';
+    }
+  });
+
+  main.querySelectorAll('.sys-config-tabs__btn').forEach((button) => {
+    if (button instanceof HTMLElement) {
+      button.style.backgroundColor = '';
+      button.style.color = '';
+      button.style.border = `1px solid ${PRIMARY}`;
+    }
+  });
+
+  main.querySelectorAll('.sys-config-modal__btn:not(.sys-config-modal__btn--primary)').forEach((button) => {
+    if (button instanceof HTMLElement) {
+      button.style.backgroundColor = PRIMARY_LIGHT;
+      button.style.color = '#FFFFFF';
+    }
+  });
+}
+
 function actionButtons(row) {
   const rowId = getRowId(state.activeTab, row);
   if (!rowId) return '';
@@ -130,6 +156,7 @@ function renderTable(main, tabId) {
     .map((row) => `<tr>${dataset.mapRow(row).map((value) => `<td>${value}</td>`).join('')}<td>${actionButtons(row)}</td></tr>`)
     .join('');
   tableWrap.classList.toggle('sys-config-table-wrap--scrollable', state.rowsByTab[tabId].length > 7);
+  applyButtonBackgrounds(main);
 }
 
 async function setActiveTab(main, tabId) {
@@ -332,6 +359,8 @@ function buildSystemConfigMain() {
     </div>
 
   `;
+
+  applyButtonBackgrounds(main);
 
   main.querySelectorAll('.sys-config-tabs__btn').forEach((button) => {
     button.addEventListener('click', () => {
