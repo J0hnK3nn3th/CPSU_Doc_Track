@@ -156,7 +156,7 @@ body {
 
 .admin-panels {
   display: grid;
-  grid-template-columns: 1.4fr 1fr;
+  grid-template-columns: 2.2fr 0.6fr;
   gap: 1rem;
   align-items: start;
 }

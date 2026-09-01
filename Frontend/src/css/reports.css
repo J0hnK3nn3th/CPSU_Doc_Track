@@ -1,0 +1,15 @@
+.reports-main {
+  max-width: none;
+}
+
+.reports-panel .admin-panel__body {
+  padding: 2.5rem 1.25rem;
+}
+
+.reports-placeholder {
+  margin: 0;
+  text-align: center;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--admin-muted);
+}

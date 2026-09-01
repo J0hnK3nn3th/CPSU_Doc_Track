@@ -1,8 +1,9 @@
 import { apiUrl } from '../js/api.js';
-import { initNavigationLoading, navigateWithLoading } from '../js/loading.js';
+import { initNavigationLoading, navigateWithLoading, replaceWithLoading } from '../js/loading.js';
 import { notify } from '../js/notifications.js';
 
 const logoUrl = '/src/images/cpsulogo.png';
+const LOGOUT_LOCK_KEY = 'auth.logoutLock';
 
 function getCookie(name) {
   const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -11,6 +12,11 @@ function getCookie(name) {
 }
 
 async function logoutUser() {
+  try {
+    window.sessionStorage.setItem(LOGOUT_LOCK_KEY, '1');
+  } catch {
+    // Ignore storage errors.
+  }
   await fetch(apiUrl('/api/auth/csrf/'), { credentials: 'include' }).catch(() => null);
   const csrfToken = getCookie('csrftoken');
   const response = await fetch(apiUrl('/api/auth/logout/'), {
@@ -23,7 +29,7 @@ async function logoutUser() {
   }).catch(() => null);
 
   if (!response) {
-    navigateWithLoading('/');
+    replaceWithLoading('/');
     return;
   }
 
@@ -33,7 +39,7 @@ async function logoutUser() {
 
   // Treat unauthorized/forbidden as already logged out and redirect.
   if ([401, 403].includes(response.status)) {
-    navigateWithLoading('/');
+    replaceWithLoading('/');
     return;
   }
 
@@ -46,7 +52,7 @@ async function logoutUser() {
 
   const redirectTarget =
     typeof payload.redirect === 'string' && payload.redirect ? payload.redirect : '/';
-  navigateWithLoading(redirectTarget);
+  replaceWithLoading(redirectTarget);
 }
 
 async function loadCurrentUserProfile() {

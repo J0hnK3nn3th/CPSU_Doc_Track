@@ -193,8 +193,8 @@ function buildUserMain() {
           <h2 class="admin-panel__title">Quick Links</h2>
         </div>
         <div class="admin-panel__body admin-quick user-main__body">
-          <a class="user-main__link" href="ucincoming.html">Go to Incoming</a>
-          <a class="user-main__link" href="ucoutgoing.html">Go to Outgoing</a>
+          <a class="user-main__link" href="/ucincoming.html">Go to Incoming</a>
+          <a class="user-main__link" href="/ucoutgoing.html">Go to Completed</a>
         </div>
       </section>
     </div>

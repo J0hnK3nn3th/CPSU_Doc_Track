@@ -259,7 +259,7 @@ function buildLogsMain() {
   main.innerHTML = `
     <header class="admin-main__head">
       <h1 class="admin-main__title">Recent Logs</h1>
-      <p class="admin-main__subtitle">Same log entries as the dashboard recent logs, with the full list returned by the server.</p>
+     
     </header>
 
     <section class="admin-panel logs-panel" aria-labelledby="logs-heading">
