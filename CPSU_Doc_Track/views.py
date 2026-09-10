@@ -19,6 +19,7 @@ ALLOWED_PAGES = {
     'ucincoming',
     'ulogs',
     'ucoutgoing',
+    'uccompleted',
     'ureports',
     'user',
     'uincoming',

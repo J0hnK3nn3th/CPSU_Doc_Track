@@ -4,7 +4,7 @@ let authCheckInFlight = null;
 const LOGOUT_LOCK_KEY = 'auth.logoutLock';
 
 const PUBLIC_ROUTE_PATTERN = /(?:^\/$|\/index\.html$|\/login\.html$)/i;
-const PROTECTED_ROUTE_PATTERN = /\/(?:admin|user|cuser|incoming|outgoing|logs|system_config|completed|uincoming|uoutgoing|ulogs|ucincoming|uclogs)\.html$/i;
+const PROTECTED_ROUTE_PATTERN = /\/(?:admin|user|cuser|incoming|outgoing|logs|system_config|completed|uincoming|uoutgoing|ulogs|ucincoming|ucoutgoing|uccompleted|ucreports|uclogs)\.html$/i;
 
 function ensureStyles() {
   if (document.getElementById('app-loading-styles')) return;

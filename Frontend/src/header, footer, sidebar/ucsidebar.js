@@ -21,6 +21,12 @@ const NAV_ITEMS = [
     icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
   },
   {
+    id: 'completed',
+    label: 'Completed',
+    href: 'uccompleted.html',
+    icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+  },
+  {
     id: 'reports',
     label: 'Reports',
     href: 'ucreports.html',
@@ -75,7 +81,7 @@ export function createSidebar({ activeId = 'dashboard', onSelect, isAdmin = true
   initNavigationLoading();
   const visibleIds = isAdmin
     ? NAV_ITEMS.map((item) => item.id)
-    : ['dashboard', 'incoming', 'outgoing', 'reports', 'logs'];
+    : ['dashboard', 'incoming', 'outgoing', 'completed', 'reports', 'logs'];
   const items = NAV_ITEMS
     .filter((item) => visibleIds.includes(item.id))
     .map((item) => {
@@ -83,6 +89,7 @@ export function createSidebar({ activeId = 'dashboard', onSelect, isAdmin = true
       if (item.id === 'dashboard') return { ...item, href: 'cuser.html' };
       if (item.id === 'incoming') return { ...item, href: 'ucincoming.html' };
       if (item.id === 'outgoing') return { ...item, href: 'ucoutgoing.html' };
+      if (item.id === 'completed') return { ...item, href: 'uccompleted.html' };
       if (item.id === 'reports') return { ...item, href: 'ucreports.html' };
       if (item.id === 'logs') return { ...item, href: 'uclogs.html' };
       return item;

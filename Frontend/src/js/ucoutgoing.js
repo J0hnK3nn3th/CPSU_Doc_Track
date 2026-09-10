@@ -67,9 +67,6 @@ async function loadOutgoingDocuments(main, currentUser = null) {
     const preparedByNameKey = normalizeUserLabel(preparedByName);
     const usernameKey = normalizeUserLabel(currentUser?.username);
     const visibleRows = rows.filter((row) => {
-      const stateKey = String(row?.document_state || '').trim().toLowerCase();
-      if (stateKey !== 'completed') return false;
-
       const rowPreparedByKey = normalizeUserLabel(row?.prepared_by);
       const rowReceivedByKey = normalizeUserLabel(row?.received_by);
       const rowForwarders = parseForwarderHistory(row?.forwarder_history);
@@ -78,11 +75,26 @@ async function loadOutgoingDocuments(main, currentUser = null) {
         (rowPreparedByKey === preparedByNameKey || rowPreparedByKey === usernameKey);
       const isForwarder =
         rowForwarders.includes(preparedByNameKey) || rowForwarders.includes(usernameKey);
+
+      // Important rule:
+      // - A RECEIVED document should NOT appear in the receiver's Outgoing page
+      //   unless it has been forwarded onward (i.e., state is no longer RECEIVED).
+      const stateKey = String(row?.document_state || '').trim().toLowerCase();
+      const isReceivedOnly = stateKey === 'received';
+
       const isReceiver =
         rowReceivedByKey &&
         (rowReceivedByKey === preparedByNameKey || rowReceivedByKey === usernameKey);
 
-      return Boolean(isSender || isForwarder || isReceiver);
+      // RECEIVED state should not appear in Outgoing for the receiver/current user
+      // (or any non-sender). Only the sender should see it as status feedback.
+      if (isReceivedOnly) {
+        return Boolean(isSender) && !isReceiver;
+      }
+
+      if (isSender) return true;
+      if (!isForwarder) return false;
+      return !isReceivedOnly;
     });
     tbody.innerHTML = visibleRows
       .map(
@@ -112,7 +124,10 @@ function buildOutgoingMain(currentUser = null) {
 
   main.innerHTML = `
     <header class="outgoing-page-head">
-      <h1 class="outgoing-page-head__title">Completed Documents</h1>
+      <h1 class="outgoing-page-head__title">Outgoing Documents</h1>
+      <button type="button" class="outgoing-page-head__action-btn" id="outgoing-new-doc-btn">
+        New Document
+      </button>
     </header>
 
     <div class="outgoing-top-row">
@@ -131,8 +146,11 @@ function buildOutgoingMain(currentUser = null) {
           aria-label="Filter by year"
         />
         <label class="outgoing-topbar__field-label" for="outgoing-doc-state">Document State :</label>
-        <select class="outgoing-topbar__select" id="outgoing-doc-state" name="docState" disabled>
-          <option value="completed" selected>COMPLETED</option>
+        <select class="outgoing-topbar__select" id="outgoing-doc-state" name="docState">
+          <option value="">All</option>
+          <option value="forwarded">FORWARDED</option>
+          <option value="received">RECEIVED</option>
+          <option value="completed">COMPLETED</option>
         </select>
         <div class="outgoing-topbar__search-field">
           <input
@@ -150,7 +168,7 @@ function buildOutgoingMain(currentUser = null) {
       </div>
     </div>
 
-    <section class="admin-panel outgoing-table-panel" aria-label="Completed documents list">
+    <section class="admin-panel outgoing-table-panel" aria-label="Outgoing documents list">
       <div class="admin-panel__body">
         <div class="admin-table-wrap outgoing-table-wrap">
           <table class="admin-table outgoing-table">
@@ -347,7 +365,7 @@ function buildOutgoingMain(currentUser = null) {
     ).join('');
   }
 
-  const logAction = (label) => console.info(`Completed: ${label}`);
+  const logAction = (label) => console.info(`Outgoing: ${label} (wire to API when ready)`);
 
   const runSearch = () => {
     const year = main.querySelector('#outgoing-year')?.value?.trim();
@@ -926,7 +944,7 @@ async function requireAuth() {
   return null;
 }
 
-async function mountCompleted(root = document.querySelector('#app')) {
+async function mountOutgoing(root = document.querySelector('#app')) {
   if (!root) return;
 
   const currentUser = await requireAuth();
@@ -949,7 +967,7 @@ async function mountCompleted(root = document.querySelector('#app')) {
   const toggleSidebar = () => layout.classList.toggle(openClass);
 
   const sidebar = createSidebar({
-    activeId: 'completed',
+    activeId: 'outgoing',
     onSelect: () => closeSidebar(),
     isAdmin: false,
     dashboardHref: 'cuser.html',
@@ -977,4 +995,4 @@ async function mountCompleted(root = document.querySelector('#app')) {
   );
 }
 
-mountCompleted();
+mountOutgoing();
