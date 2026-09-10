@@ -578,6 +578,8 @@ def _serialize_outgoing_document(obj):
         'description': obj.description or '',
         'received_by': obj.received_by or '',
         'received_date': obj.received_at.strftime('%b %d, %Y') if obj.received_at else '',
+        'received_at': obj.received_at.isoformat() if obj.received_at else '',
+        'updated_at': obj.updated_at.isoformat() if obj.updated_at else '',
     }
 
 

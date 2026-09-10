@@ -38,11 +38,8 @@ function parseForwarderHistory(value) {
 }
 
 function isReceivedState(value) {
-  return String(value || '').trim().toLowerCase() === 'received';
-}
-
-function isCompletedState(value) {
-  return String(value || '').trim().toLowerCase() === 'completed';
+  const state = String(value || '').trim().toLowerCase();
+  return state === 'received' || state === 'completed';
 }
 
 function getPreparedByFromUser(currentUser) {
@@ -70,22 +67,34 @@ async function loadOutgoingDocuments(main, currentUser = null) {
     const preparedByNameKey = normalizeUserLabel(preparedByName);
     const usernameKey = normalizeUserLabel(currentUser?.username);
     const visibleRows = rows.filter((row) => {
-      if (!isCompletedState(row?.document_state)) return false;
       const rowPreparedByKey = normalizeUserLabel(row?.prepared_by);
       const rowReceivedByKey = normalizeUserLabel(row?.received_by);
       const rowForwarders = parseForwarderHistory(row?.forwarder_history);
-      return (
-        (rowPreparedByKey && (
-          rowPreparedByKey === preparedByNameKey ||
-          rowPreparedByKey === usernameKey
-        )) ||
-        (rowReceivedByKey && (
-          rowReceivedByKey === preparedByNameKey ||
-          rowReceivedByKey === usernameKey
-        )) ||
-        rowForwarders.includes(preparedByNameKey) ||
-        rowForwarders.includes(usernameKey)
-      );
+      const isSender =
+        rowPreparedByKey &&
+        (rowPreparedByKey === preparedByNameKey || rowPreparedByKey === usernameKey);
+      const isForwarder =
+        rowForwarders.includes(preparedByNameKey) || rowForwarders.includes(usernameKey);
+
+      // Important rule:
+      // - A RECEIVED document should NOT appear in the receiver's Outgoing page
+      //   unless it has been forwarded onward (i.e., state is no longer RECEIVED).
+      const stateKey = String(row?.document_state || '').trim().toLowerCase();
+      const isReceivedOnly = stateKey === 'received';
+
+      const isReceiver =
+        rowReceivedByKey &&
+        (rowReceivedByKey === preparedByNameKey || rowReceivedByKey === usernameKey);
+
+      // RECEIVED state should not appear in Outgoing for the receiver/current user
+      // (or any non-sender). Only the sender should see it as status feedback.
+      if (isReceivedOnly) {
+        return Boolean(isSender) && !isReceiver;
+      }
+
+      if (isSender) return true;
+      if (!isForwarder) return false;
+      return !isReceivedOnly;
     });
     tbody.innerHTML = visibleRows
       .map(

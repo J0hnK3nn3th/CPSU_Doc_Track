@@ -37,4 +37,9 @@ def frontend_page(request, page):
 
 
 def frontend_src_asset(request, path):
-    return serve(request, path, document_root=str(FRONTEND_SRC_DIR))
+    response = serve(request, path, document_root=str(FRONTEND_SRC_DIR))
+    # Avoid stale ES-module / CSS caches during local development.
+    response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response['Pragma'] = 'no-cache'
+    response['Expires'] = '0'
+    return response
