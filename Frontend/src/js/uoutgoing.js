@@ -23,7 +23,7 @@ function escapeHtmlOutgoingCell(value) {
 
 /** Office/department where the document is forwarded (recipient), with legacy fallback. */
 function outgoingForwardOffice(row) {
-  return (row?.office_name || '').trim();
+  return (row?.recipient_department || row?.office_name || '').trim();
 }
 
 function normalizeUserLabel(value) {

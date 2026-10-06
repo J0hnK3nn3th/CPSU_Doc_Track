@@ -48,8 +48,10 @@ function getReportCategory(row) {
 function isDocumentInOffice(row, officeKey) {
   if (!officeKey) return false;
   const rowOffice = normalizeToken(row?.office_name);
+  const sourceOffice = normalizeToken(row?.source_office);
   const recipientDept = normalizeToken(row?.recipient_department);
   if (rowOffice && rowOffice === officeKey) return true;
+  if (sourceOffice && sourceOffice === officeKey) return true;
   if (recipientDept && recipientDept === officeKey) return true;
   return false;
 }
@@ -59,6 +61,51 @@ function parseTimestamp(value) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return null;
   return date;
+}
+
+function localDayTimestamp(dateStr, endOfDay = false) {
+  const parts = String(dateStr || '').trim().split('-').map(Number);
+  if (parts.length !== 3 || parts.some((part) => !Number.isFinite(part))) return null;
+
+  const [year, month, day] = parts;
+  const date = new Date(
+    year,
+    month - 1,
+    day,
+    endOfDay ? 23 : 0,
+    endOfDay ? 59 : 0,
+    endOfDay ? 59 : 0,
+    endOfDay ? 999 : 0,
+  );
+  if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return null;
+  return date.getTime();
+}
+
+function getReportTimestamp(row) {
+  const category = getReportCategory(row);
+  if (category === 'processing') return parseTimestamp(row?.received_at) || parseTimestamp(row?.updated_at);
+  if (category === 'forwarded') return parseTimestamp(row?.updated_at) || parseTimestamp(row?.received_at);
+  if (category === 'completed') return parseTimestamp(row?.updated_at) || parseTimestamp(row?.received_at);
+  return parseTimestamp(row?.updated_at) || parseTimestamp(row?.received_at);
+}
+
+function rowInDateRange(row, fromStr, toStr) {
+  const fromTrim = String(fromStr || '').trim();
+  const toTrim = String(toStr || '').trim();
+  if (!fromTrim && !toTrim) return true;
+
+  const timestamp = getReportTimestamp(row)?.getTime();
+  if (!Number.isFinite(timestamp)) return false;
+
+  if (fromTrim) {
+    const start = localDayTimestamp(fromTrim);
+    if (start == null || timestamp < start) return false;
+  }
+  if (toTrim) {
+    const end = localDayTimestamp(toTrim, true);
+    if (end == null || timestamp > end) return false;
+  }
+  return true;
 }
 
 function formatDuration(ms) {
@@ -122,6 +169,8 @@ function applyReportFilters(rows, filters) {
   const queryFilter = normalizeToken(filters?.query);
 
   return rows.filter((row) => {
+    if (!rowInDateRange(row, filters?.dateFrom, filters?.dateTo)) return false;
+
     const category = getReportCategory(row);
     if (statusFilter === 'forwarded' && category !== 'forwarded') return false;
     if (statusFilter === 'processing' && category !== 'processing') return false;
@@ -129,7 +178,7 @@ function applyReportFilters(rows, filters) {
 
     if (queryFilter) {
       const searchable = normalizeToken(
-        `${row?.document_code || ''} ${row?.control_number || ''} ${row?.subject || ''} ${row?.office_name || ''} ${row?.recipient_department || ''} ${row?.received_by || ''} ${row?.prepared_by || ''}`,
+        `${row?.document_code || ''} ${row?.control_number || ''} ${row?.subject || ''} ${row?.office_name || ''} ${row?.source_office || ''} ${row?.recipient_department || ''} ${row?.received_by || ''} ${row?.prepared_by || ''}`,
       );
       if (!searchable.includes(queryFilter)) return false;
     }
@@ -138,16 +187,18 @@ function applyReportFilters(rows, filters) {
 }
 
 function renderReportStats(main, rows) {
-  const processingEl = main.querySelector('#reports-stat-processing');
-  const completedEl = main.querySelector('#reports-stat-completed');
+  const receivedEl = main.querySelector('#reports-stat-received');
+  const forwardedEl = main.querySelector('#reports-stat-forwarded');
   const avgProcessEl = main.querySelector('#reports-stat-avg-process');
-  if (!processingEl || !completedEl || !avgProcessEl) return;
+  if (!receivedEl || !forwardedEl || !avgProcessEl) return;
 
   const processingRows = rows.filter((row) => getReportCategory(row) === 'processing');
+  const forwardedRows = rows.filter((row) => getReportCategory(row) === 'forwarded');
   const completedRows = rows.filter((row) => getReportCategory(row) === 'completed');
+  const now = Date.now();
 
   const durationSamples = [...processingRows, ...completedRows]
-    .map((row) => getProcessDuration(row).sortMs)
+    .map((row) => getProcessDuration(row, now).sortMs)
     .filter((ms) => Number.isFinite(ms) && ms >= 0);
 
   const avgProcess =
@@ -155,8 +206,8 @@ function renderReportStats(main, rows) {
       ? formatDuration(durationSamples.reduce((sum, ms) => sum + ms, 0) / durationSamples.length)
       : DASH;
 
-  processingEl.textContent = formatCount(processingRows.length);
-  completedEl.textContent = formatCount(completedRows.length);
+  receivedEl.textContent = formatCount(processingRows.length);
+  forwardedEl.textContent = formatCount(forwardedRows.length);
   avgProcessEl.textContent = avgProcess;
 }
 
@@ -189,6 +240,7 @@ function renderReportRows(main, rows, officeLabel) {
       const statusDisplay = category === 'processing' ? 'PROCESSING (RECEIVED)' : statusLabel;
       const office =
         row.office_name ||
+        row.source_office ||
         row.recipient_department ||
         (category === 'forwarded' ? row.recipient_name : '') ||
         DASH;
@@ -214,10 +266,10 @@ function renderReportRows(main, rows, officeLabel) {
 
 function refreshReportView(main) {
   const allRows = Array.isArray(main.__reportRows) ? main.__reportRows : [];
-  const filters = main.__reportFilters || { status: '', query: '' };
+  const filters = main.__reportFilters || { status: '', query: '', dateFrom: '', dateTo: '' };
   const officeLabel = main.__officeLabel || '';
   const filtered = applyReportFilters(allRows, filters);
-  renderReportStats(main, allRows);
+  renderReportStats(main, filtered);
   renderReportRows(main, filtered, officeLabel);
 }
 
@@ -226,49 +278,84 @@ async function loadReports(main, currentUser) {
   const officeKey = normalizeToken(officeLabel);
   main.__officeLabel = officeLabel;
 
-  const officeNameEl = main.querySelector('#reports-office-name');
-  if (officeNameEl) {
-    officeNameEl.textContent = officeLabel || 'Your office';
-  }
-
   try {
     const res = await fetch(apiUrl('/api/outgoing-documents/'), { credentials: 'include' });
-    if (!res.ok) throw new Error('Failed to load documents.');
+    const payload = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(payload?.error || `Request failed (${res.status}).`);
 
-    const payload = await res.json();
     const rows = Array.isArray(payload?.rows) ? payload.rows : [];
     const officeRows = rows.filter((row) => isDocumentInOffice(row, officeKey));
 
     main.__reportRows = officeRows;
-    main.__reportFilters = main.__reportFilters || { status: '', query: '' };
+    main.__reportError = '';
+    main.__reportFilters = main.__reportFilters || { status: '', query: '', dateFrom: '', dateTo: '' };
     refreshReportView(main);
+    return true;
   } catch (error) {
     console.warn('Reports: failed to load documents', error);
+    main.__reportError = error instanceof Error ? error.message : 'Unknown request error.';
     main.__reportRows = [];
-    main.__reportFilters = main.__reportFilters || { status: '', query: '' };
+    main.__reportFilters = main.__reportFilters || { status: '', query: '', dateFrom: '', dateTo: '' };
     refreshReportView(main);
+    return false;
   }
 }
 
 function wireReportFilters(main) {
   const statusSelect = main.querySelector('#reports-status-filter');
-  const searchInput = main.querySelector('#reports-search-query');
-  const clearBtn = main.querySelector('#reports-clear-filters');
+  const dateFromInput = main.querySelector('#reports-date-from');
+  const dateToInput = main.querySelector('#reports-date-to');
+  const generateBtn = main.querySelector('#reports-generate-report');
 
-  const syncFilters = () => {
+  main.__reportFilters = main.__reportFilters || { status: '', query: '', dateFrom: '', dateTo: '' };
+
+  const syncTextFilters = () => {
     main.__reportFilters = {
+      ...main.__reportFilters,
       status: statusSelect instanceof HTMLSelectElement ? statusSelect.value : '',
-      query: searchInput instanceof HTMLInputElement ? searchInput.value : '',
     };
     refreshReportView(main);
   };
 
-  statusSelect?.addEventListener('change', syncFilters);
-  searchInput?.addEventListener('input', syncFilters);
-  clearBtn?.addEventListener('click', () => {
-    if (statusSelect instanceof HTMLSelectElement) statusSelect.value = '';
-    if (searchInput instanceof HTMLInputElement) searchInput.value = '';
-    syncFilters();
+  statusSelect?.addEventListener('change', syncTextFilters);
+  generateBtn?.addEventListener('click', async () => {
+    if (generateBtn instanceof HTMLButtonElement) generateBtn.disabled = true;
+
+    const dateFrom = dateFromInput instanceof HTMLInputElement ? dateFromInput.value : '';
+    const dateTo = dateToInput instanceof HTMLInputElement ? dateToInput.value : '';
+    const status = statusSelect instanceof HTMLSelectElement ? statusSelect.value : '';
+    const statusLabel =
+      statusSelect instanceof HTMLSelectElement
+        ? statusSelect.selectedOptions[0]?.textContent?.trim() || 'All'
+        : 'All';
+    const dateStatus = main.querySelector('#reports-date-status');
+
+    if (dateFrom && dateTo && dateFrom > dateTo) {
+      if (dateStatus) dateStatus.textContent = 'The start date cannot be after the end date.';
+      if (generateBtn instanceof HTMLButtonElement) generateBtn.disabled = false;
+      return;
+    }
+
+    main.__reportFilters = {
+      ...main.__reportFilters,
+      dateFrom,
+      dateTo,
+      status,
+    };
+    if (dateStatus) {
+      dateStatus.textContent = 'Loading the latest report data...';
+    }
+
+    const loaded = await loadReports(main, main.__currentUser);
+    if (dateStatus) {
+      if (loaded) {
+        const dateLabel = dateFrom || dateTo ? 'the selected date range' : 'all dates';
+        dateStatus.textContent = `Report generated for ${dateLabel} — Status: ${statusLabel}.`;
+      } else {
+        dateStatus.textContent = `Unable to load report data: ${main.__reportError || 'Please try again.'}`;
+      }
+    }
+    if (generateBtn instanceof HTMLButtonElement) generateBtn.disabled = false;
   });
 }
 
@@ -278,26 +365,23 @@ function buildReportsMain() {
   main.innerHTML = `
     <header class="admin-main__head">
       <h1 class="admin-main__title">Office Reports</h1>
-      <p class="admin-main__subtitle">
-        Documents processed in <strong id="reports-office-name">your office</strong>, including volume and processing time.
-      </p>
     </header>
 
     <section class="admin-stats reports-stats" aria-label="Office report summary">
       <article class="admin-stat">
-        <span class="reports-stat__icon reports-stat__icon--processing" aria-hidden="true"><i class="fa-solid fa-spinner"></i></span>
+        <span class="reports-stat__icon reports-stat__icon--received" aria-hidden="true"><i class="fa-solid fa-inbox"></i></span>
         <div class="reports-stat__content">
-          <p class="admin-stat__label">Being Processed</p>
-          <p class="admin-stat__value" id="reports-stat-processing">0</p>
-          <p class="admin-stat__hint">Received and still in this office</p>
+          <p class="admin-stat__label">Documents Received</p>
+          <p class="admin-stat__value" id="reports-stat-received">0</p>
+          <p class="admin-stat__hint">Received within the selected period</p>
         </div>
       </article>
       <article class="admin-stat">
-        <span class="reports-stat__icon reports-stat__icon--completed" aria-hidden="true"><i class="fa-solid fa-circle-check"></i></span>
+        <span class="reports-stat__icon reports-stat__icon--forwarded" aria-hidden="true"><i class="fa-solid fa-share"></i></span>
         <div class="reports-stat__content">
-          <p class="admin-stat__label">Completed</p>
-          <p class="admin-stat__value" id="reports-stat-completed">0</p>
-          <p class="admin-stat__hint">Finished in this office</p>
+          <p class="admin-stat__label">Documents Forwarded</p>
+          <p class="admin-stat__value" id="reports-stat-forwarded">0</p>
+          <p class="admin-stat__hint">Forwarded within the selected period</p>
         </div>
       </article>
       <article class="admin-stat">
@@ -316,24 +400,34 @@ function buildReportsMain() {
         <span class="reports-result-count" id="reports-result-count">0 documents</span>
       </div>
       <div class="admin-panel__body">
-        <div class="reports-toolbar" role="search">
-          <label class="reports-toolbar__label" for="reports-status-filter">Status</label>
-          <select class="reports-toolbar__select" id="reports-status-filter" name="status">
-            <option value="">All</option>
-            <option value="processing">Being Processed</option>
-            <option value="forwarded">Forwarded</option>
-            <option value="completed">Completed</option>
-          </select>
-          <label class="reports-toolbar__label" for="reports-search-query">Search</label>
-          <input
-            class="reports-toolbar__input"
-            type="search"
-            id="reports-search-query"
-            name="q"
-            placeholder="Doc no, subject, recipient..."
-            autocomplete="off"
-          />
-          <button type="button" class="reports-toolbar__clear" id="reports-clear-filters">Clear</button>
+        <div class="reports-toolbar" role="search" aria-label="Report filters">
+          <div class="reports-filter-group" role="group" aria-labelledby="reports-filter-title">
+            <h3 class="reports-filter-group__title" id="reports-filter-title">Report filters</h3>
+            <div class="reports-filter-group__controls reports-filter-group__controls--combined">
+              <span class="reports-filter-section-label">Report date range</span>
+              <label class="reports-filter-field" for="reports-date-from">
+                <span class="reports-toolbar__label">From</span>
+                <input class="reports-toolbar__input" type="date" id="reports-date-from" name="dateFrom" />
+              </label>
+              <label class="reports-filter-field" for="reports-date-to">
+                <span class="reports-toolbar__label">To</span>
+                <input class="reports-toolbar__input" type="date" id="reports-date-to" name="dateTo" />
+              </label>
+              <span class="reports-filter-section-label">Filter by status</span>
+              <label class="reports-filter-field" for="reports-status-filter">
+                <span class="reports-toolbar__label">Status</span>
+                <select class="reports-toolbar__select" id="reports-status-filter" name="status">
+                  <option value="">All</option>
+                  <option value="processing">Being Processed</option>
+                  <option value="forwarded">Forwarded</option>
+                  <option value="completed">Completed</option>
+                </select>
+              </label>
+              <button type="button" class="reports-toolbar__generate" id="reports-generate-report">Generate Report</button>
+            </div>
+          </div>
+
+          <p class="reports-date-status" id="reports-date-status" aria-live="polite"></p>
         </div>
 
         <div class="admin-table-wrap reports-table-wrap">
@@ -409,6 +503,7 @@ async function mountReports(root = document.querySelector('#app')) {
 
   const header = createHeader({ onMenuToggle: toggleSidebar });
   const main = buildReportsMain();
+  main.__currentUser = currentUser;
 
   shell.append(header, main);
   layout.append(sidebar, backdrop, shell);

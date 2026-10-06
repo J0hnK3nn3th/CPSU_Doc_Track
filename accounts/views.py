@@ -559,13 +559,28 @@ def _assign_unique_control_number(obj):
     raise RuntimeError('Could not assign a unique control number.')
 
 
-def _serialize_outgoing_document(obj):
+def _created_by_office(obj):
+    created_by = getattr(obj, 'created_by', None)
+    username = str(getattr(created_by, 'username', '') or '').strip()
+    if not username:
+        return ''
+    role_user = UserRoleConfig.objects.filter(
+        username__iexact=username,
+        is_active=True,
+    ).only('office_department').first()
+    return ((role_user.office_department if role_user else '') or '').strip()
+
+
+def _serialize_outgoing_document(obj, source_office=None):
+    if source_office is None:
+        source_office = _created_by_office(obj)
     return {
         'id': obj.id,
         'control_number': obj.control_number or '',
         'document_code': obj.document_code,
         'document_state': obj.document_state,
         'office_name': obj.office_name or '',
+        'source_office': source_office or '',
         'date_created': obj.created_at.strftime('%b %d, %Y'),
         'subject': obj.subject,
         'category': obj.category,
@@ -675,7 +690,29 @@ def outgoing_documents_collection(request):
         return auth_error
 
     if request.method != 'POST':
-        rows = [_serialize_outgoing_document(obj) for obj in OutgoingDocument.objects.all()]
+        documents = list(OutgoingDocument.objects.select_related('created_by').all())
+        usernames = {
+            str(obj.created_by.username or '').strip().lower()
+            for obj in documents
+            if obj.created_by_id
+        }
+        office_by_username = {
+            str(item['username'] or '').strip().lower(): (item['office_department'] or '').strip()
+            for item in UserRoleConfig.objects.filter(
+                is_active=True,
+                username__in=usernames,
+            ).values('username', 'office_department')
+        }
+        rows = [
+            _serialize_outgoing_document(
+                obj,
+                office_by_username.get(
+                    str(obj.created_by.username or '').strip().lower(),
+                    '',
+                ),
+            )
+            for obj in documents
+        ]
         return JsonResponse({'rows': rows})
 
     payload = _parse_json(request)
@@ -697,6 +734,10 @@ def outgoing_documents_collection(request):
             status=400,
         )
 
+    created_office = _current_user_office_department(request)
+    if not created_office:
+        created_office = (payload.get('office_name') or '').strip()
+
     obj = OutgoingDocument(
         document_code=document_code,
         document_state=state,
@@ -708,7 +749,7 @@ def outgoing_documents_collection(request):
         recipient_department=(payload.get('recipient_department') or '').strip(),
         carrier=(payload.get('carrier') or '').strip(),
         remarks=(payload.get('remarks') or '').strip(),
-        office_name=(payload.get('office_name') or '').strip(),
+        office_name=created_office,
     )
     if request.user.is_authenticated:
         obj.created_by = request.user
