@@ -134,14 +134,21 @@ function buildRecipientAliases(profile) {
   return aliases;
 }
 
-function isForwardedToCurrentUser(row, recipientAliases) {
+function isIncomingForCurrentUser(row, profile, recipientAliases) {
+  const recipientDepartment = normalizeToken(row?.recipient_department);
+  const userDepartment = normalizeToken(profile?.office_department);
+  if (recipientDepartment && userDepartment && recipientDepartment === userDepartment) {
+    return true;
+  }
+
   const recipient = normalizeToken(row?.recipient_name);
   if (!recipient) return false;
   return recipientAliases.has(recipient);
 }
 
-function isNewForwardedDocument(row) {
-  return normalizeToken(row?.document_state) === 'new';
+function isPendingIncomingDocument(row) {
+  const state = normalizeToken(row?.document_state);
+  return state === 'forwarded' || state === 'new';
 }
 
 function createNotificationToast(message) {
@@ -171,9 +178,14 @@ function showCenterNotification(message, icon = 'info') {
   });
 }
 
-function loadDismissedNotificationIds() {
+function getNotificationStorageKey(profile) {
+  const username = normalizeToken(profile?.username) || 'user';
+  return `uheader.dismissedNotificationIds.${username}`;
+}
+
+function loadDismissedNotificationIds(storageKey = 'uheader.dismissedNotificationIds') {
   try {
-    const raw = window.localStorage.getItem('uheader.dismissedNotificationIds');
+    const raw = window.localStorage.getItem(storageKey);
     const parsed = JSON.parse(raw || '[]');
     if (!Array.isArray(parsed)) return new Set();
     return new Set(
@@ -186,12 +198,12 @@ function loadDismissedNotificationIds() {
   }
 }
 
-function persistDismissedNotificationIds(idsSet) {
+function persistDismissedNotificationIds(idsSet, storageKey = 'uheader.dismissedNotificationIds') {
   try {
     const ids = Array.from(idsSet)
       .map((value) => Number(value))
       .filter((id) => Number.isInteger(id) && id > 0);
-    window.localStorage.setItem('uheader.dismissedNotificationIds', JSON.stringify(ids));
+    window.localStorage.setItem(storageKey, JSON.stringify(ids));
   } catch {
     // Ignore storage write errors.
   }
@@ -327,10 +339,13 @@ export function createHeader({ onMenuToggle } = {}) {
   const notifyEmpty = header.querySelector('.admin-header__notify-empty');
   const notifyBadge = header.querySelector('.admin-header__notify-badge');
 
+  let currentUserProfile = null;
   let recipientAliases = new Set();
+  let hasInitialNotificationPoll = false;
   const baselineSeenDocumentIds = new Set();
   const shownNotificationDocumentIds = new Set();
-  const dismissedNotificationDocumentIds = loadDismissedNotificationIds();
+  let dismissedNotificationDocumentIds = new Set();
+  let notificationStoragePath = '';
   let pollTimer = null;
 
   const escapeHtml = (value) => String(value ?? '')
@@ -383,13 +398,17 @@ export function createHeader({ onMenuToggle } = {}) {
       const payload = await response.json();
       const rows = Array.isArray(payload?.rows) ? payload.rows : [];
       const forwardedRows = rows.filter((row) => {
-        if (!(isForwardedToCurrentUser(row, recipientAliases) && isNewForwardedDocument(row))) {
+        if (!(isIncomingForCurrentUser(row, currentUserProfile, recipientAliases)
+          && isPendingIncomingDocument(row))) {
           return false;
         }
         const rowId = Number(row?.id);
         return !Number.isInteger(rowId) || rowId <= 0 || !dismissedNotificationDocumentIds.has(rowId);
       });
 
+      forwardedRows.sort((left, right) => (
+        String(right?.updated_at || '').localeCompare(String(left?.updated_at || ''))
+      ));
       updateNotificationUI(forwardedRows);
 
       const currentIds = new Set(
@@ -398,8 +417,13 @@ export function createHeader({ onMenuToggle } = {}) {
           .filter((id) => Number.isInteger(id) && id > 0),
       );
 
-      if (!baselineSeenDocumentIds.size || silent) {
+      baselineSeenDocumentIds.forEach((id) => {
+        if (!currentIds.has(id)) baselineSeenDocumentIds.delete(id);
+      });
+
+      if (silent || !hasInitialNotificationPoll) {
         currentIds.forEach((id) => baselineSeenDocumentIds.add(id));
+        hasInitialNotificationPoll = true;
         return;
       }
 
@@ -452,7 +476,10 @@ export function createHeader({ onMenuToggle } = {}) {
 
     if (userNameEl) userNameEl.textContent = fullName;
     if (userAvatarEl) userAvatarEl.textContent = avatarInitial;
+    currentUserProfile = profile;
     recipientAliases = buildRecipientAliases(profile);
+    notificationStoragePath = getNotificationStorageKey(profile);
+    dismissedNotificationDocumentIds = loadDismissedNotificationIds(notificationStoragePath);
     pollForwardedNotifications({ silent: true });
     startNotificationPolling();
   });
@@ -546,10 +573,15 @@ export function createHeader({ onMenuToggle } = {}) {
     const docId = Number(linkBtn.getAttribute('data-doc-id'));
     if (!Number.isInteger(docId) || docId <= 0) return;
     dismissedNotificationDocumentIds.add(docId);
-    persistDismissedNotificationIds(dismissedNotificationDocumentIds);
+    if (notificationStoragePath) {
+      persistDismissedNotificationIds(dismissedNotificationDocumentIds, notificationStoragePath);
+    }
     pollForwardedNotifications({ silent: true });
     closeNotifyPanel();
-    navigateWithLoading(`uincoming.html?docId=${docId}`);
+    const incomingPage = currentUserProfile?.can_mark_complete === true
+      ? 'ucincoming.html'
+      : 'uincoming.html';
+    navigateWithLoading(`${incomingPage}?docId=${docId}`);
   });
 
   document.addEventListener('visibilitychange', () => {

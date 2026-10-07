@@ -182,6 +182,12 @@ def auth_me(request):
         middle_name = (role_user.middle_name if role_user else '') or ''
         office_department = (role_user.office_department if role_user else '') or ''
         position_role = (role_user.position_role if role_user else '') or ''
+        can_mark_complete = False
+        if office_department:
+            can_mark_complete = OfficeDepartment.objects.filter(
+                Q(name__iexact=office_department) | Q(code__iexact=office_department),
+                is_active=True,
+            ).values_list('can_mark_complete', flat=True).first() is True
         return JsonResponse({
             'authenticated': True,
             'username': request.user.username,
@@ -191,6 +197,7 @@ def auth_me(request):
             'last_name': last_name,
             'office_department': office_department,
             'position_role': position_role,
+            'can_mark_complete': can_mark_complete,
         })
     return JsonResponse({'authenticated': False}, status=401)
 

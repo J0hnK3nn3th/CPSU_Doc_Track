@@ -333,9 +333,7 @@ function buildOutgoingMain(currentUser = null) {
           <button type="button" class="outgoing-modal__tool-btn" id="outgoing-modal-save-btn">
             FORWARD
           </button>
-          <button type="button" class="outgoing-modal__tool-btn" id="outgoing-modal-barcode-btn">
-            BARCODE
-          </button>
+         
           <button
             type="button"
             class="outgoing-modal__tool-btn"
